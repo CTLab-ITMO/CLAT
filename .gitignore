@@ -1,0 +1,9 @@
+data/
+**/__pycache__/
+.idea/
+.coverage
+.env
+config.yaml
+local.config.yaml
+notebooks/
+sync_with_remote_server.sh

@@ -1,0 +1,2 @@
+[run]
+omit = image_assessment_service/apis/*

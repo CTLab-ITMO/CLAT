@@ -1,0 +1,48 @@
+{% extends "tasks/base-task.html" %}
+
+// Настраиваем кнопку перехода
+
+
+{% block before_script %}
+    <script>
+        document.startup = async function () {
+            const response = await fetch(`/api/tasks/${taskId}/annotation-status`);
+            if (!response.ok) throw new Error('Ошибка загрузки статуса аннотации');
+            
+            const annotationStatus = await response.json();
+
+            const footer = document.getElementById('action-footer');
+
+            let button = document.createElement('button');
+            button.id = 'annotate-btn';
+            button.className = 'btn-annotate';
+            
+            if (annotationStatus.status === 'in_progress') {
+                button.textContent = 'Продолжить разметку';
+                button.onclick = function() {
+                    window.location.href = `/annotations/${annotationStatus.annotation_id}`;
+                };
+            } else if (annotationStatus.status === 'available') {
+                let limit = annotationStatus.annotators_limit;
+                let now = annotationStatus.annotators_now;
+                button.textContent = `Взять в работу (${now}/${limit} аннотаторов)`;
+                button.onclick = async function() {
+                    const response = await fetch(`/api/tasks/${taskId}/create-annotation`, {method: 'POST'});
+                    if (!response.ok) throw new Error('Ошибка создания аннотации');
+
+                    const annotation = await response.json();
+                    window.location.href = `/annotations/${annotation.annotation_id}`;
+                };
+            } else if (annotationStatus.status === 'unavailable') {
+                // Вариант по умолчанию, если параметр не распознан
+                let limit = annotationStatus.annotators_limit;
+                let now = annotationStatus.annotators_now;
+                button.textContent = `Недоступно (${now}/${limit} аннотаторов)`;
+            }
+            
+            if (button) {
+                footer.appendChild(button);
+            }
+        }
+    </script>
+{% endblock %}

@@ -1,0 +1,31 @@
+name: image_assessment
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres_container
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      POSTGRES_DB: mydatabase
+    ports:
+      - "${POSTGRES_EXTERNAL_PORT}:5432"
+    volumes:
+      - "${POSTGRES_DATA_VOLUME}:/var/lib/postgresql/data"
+
+  main:
+    build: .
+    container_name: main
+    restart: always
+    environment:
+      EMAIL: "${EMAIL}"
+      EMAIL_PASS: "${EMAIL_PASS}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    depends_on:
+      - postgres
+    ports:
+      - "${MAIN_EXTERNAL_PORT}:5000"
+    volumes:
+      - "${DATA_VOLUME_PATH}:/app/data"
+      - "${CONFIG_VOLUME_PATH}:/app/config.yaml:ro"
+    command: ["/usr/local/bin/start_app.sh"]

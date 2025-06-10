@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Image Assessment</title>
+    <link href="/assess/common/css/bootstrap.min.css" rel="stylesheet">
+<!--    <link href="/login/css/login.css" rel="stylesheet">-->
+</head>
+<body>
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card login-card">
+                    <div class="card-header text-center py-3">
+                        <h3 class="mb-0">Image Assessment Login</h3>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="loginForm" novalidate>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email address</label>
+                                <input type="email" class="form-control form-control-lg" id="email" required>
+                                <div class="invalid-feedback">Please enter a valid email address</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Password</label>
+                                <input type="password" class="form-control form-control-lg" id="password" required>
+                                <div class="invalid-feedback">Please enter your password</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <span id="loginText">Login</span>
+                                    <span id="loginSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                </button>
+                            </div>
+                        </form>
+                        <div class="mt-3 text-center">
+                            <p class="mb-0">Don't have an account? <a href="/assess/users/register/" class="register-link">Register here</a></p>
+                            <p class="mt-2 mb-0"><a href="#" id="forgotPasswordLink" class="text-decoration-none">Forgot password?</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-labelledby="resetPasswordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resetPasswordModalLabel">Reset Password</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Step 1: Request Reset -->
+                    <div id="resetStep1">
+                        <p>Enter your email address to receive a reset code</p>
+                        <form id="resetRequestForm">
+                            <div class="mb-3">
+                                <label for="resetEmail" class="form-label">Email address</label>
+                                <input type="email" class="form-control" id="resetEmail" required>
+                                <div class="invalid-feedback">Please enter a valid email</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <span id="requestText">Send Reset Code</span>
+                                    <span id="requestSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Step 2: Enter Code and New Password -->
+                    <div id="resetStep2" class="d-none">
+                        <p>We've sent a code to your email. Please enter it below along with your new password.</p>
+                        <form id="resetConfirmForm">
+                            <div class="mb-3">
+                                <label for="resetCode" class="form-label">Reset Code</label>
+                                <input type="text" class="form-control" id="resetCode" required>
+                                <div class="invalid-feedback">Please enter the code</div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="newPassword" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="newPassword" required minlength="8">
+                                <div class="invalid-feedback">Password must be at least 8 characters</div>
+                            </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <span id="confirmText">Reset Password</span>
+                                    <span id="confirmSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/assess/common/js/jquery-3.7.1.min.js"></script>
+    <script src="/assess/common/js/bootstrap.bundle.min.js"></script>
+    <script src="js/login.js"></script>
+</body>
+</html>

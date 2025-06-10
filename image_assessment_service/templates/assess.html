@@ -1,0 +1,95 @@
+<!-- static/main/index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <link href="/assess/common/css/bootstrap.min.css" rel="stylesheet">
+    <title>Сервис аннотирования результатов выхода моделей MetaPrime</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 2rem;
+        }
+        .service-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 800px;
+        }
+        .service-card {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #333;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: #fff;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .service-card img {
+            width: 80px;
+            height: 80px;
+            margin-right: 1.5rem;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        .service-card h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            color: #2c3e50;
+        }
+        .service-card p {
+            margin: 0.5rem 0 0;
+            font-size: 1rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    {% include 'top-panel.html' %}
+    <div class="main-content">
+        <h1>Сервис разметки изображений</h1>
+        <div class="service-container">
+            <a href="/assess/tech" class="service-card">
+                <img src="/static_assess/img/tech.png" alt="Ориентация">
+                <div>
+                    <h2>Качественная разметка</h2>
+                    <p>Аннотирование качественной составляющей изображения</p>
+                </div>
+            </a>
+            <a href="/assess/aesth" class="service-card">
+                <img src="/static_assess/img/aesth.png" alt="Классификация">
+                <div>
+                    <h2>Эстетическая разметка</h2>
+                    <p>Аннотирование эстетической составляющей изображения</p>
+                </div>
+            </a>
+            <a href="/assess/image_filter" class="service-card">
+                <img src="/static_assess/img/image_filter.png" alt="Фильтрация изображений">
+                <div>
+                    <h2>Фильтрация изображений</h2>
+                    <p>Определение невалидных изображений</p>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/assess/common/js/jquery-3.7.1.min.js"></script>
+    <script src="/assess/common/js/bootstrap.bundle.min.js"></script>
+    <script src="/static_assess/js/main.js"></script>
+</body>
+</html>

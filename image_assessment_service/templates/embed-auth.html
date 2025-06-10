@@ -1,0 +1,26 @@
+<script>
+    const token = sessionStorage.getItem('access_token');
+    const storedSessionId = sessionStorage.getItem('session_id');
+
+    if (!token || !storedSessionId) {
+        sessionStorage.clear();
+        window.location.href = '/assess/users/auth';
+    }
+
+    const originalFetch = window.fetch;
+    window.fetch = async (url, options = {}) => {
+        const headers = {
+            ...options.headers,
+            'Authorization': token,
+            'X-Session-ID': storedSessionId
+        };
+        const response = await originalFetch(url, { ...options, headers });
+
+        if (response.status === 401) {
+            sessionStorage.clear();
+            window.location.href = '/assess/users/auth';
+        }
+
+    return response;
+    }
+</script>

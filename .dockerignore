@@ -1,0 +1,12 @@
+data/
+notebooks/
+image_assessment_service/apis/runtime_log.json
+postgres_password.txt
+apps/
+image_assessment.zip
+need_assess.zip
+.env
+example.env
+config.yaml
+local.config.yaml
+example.config.yaml

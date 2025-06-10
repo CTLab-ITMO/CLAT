@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    {% include 'embed-auth.html' %}
+    <script>
+        const annotationId = {{annotation_id}};
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор аннотаций</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/konva@8/konva.min.js"></script>
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --success-color: #4cc9f0;
+            --danger-color: #f72585;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: #f5f7fa;
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        /* Панель инструментов */
+        .tool-panel {
+            width: 280px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--box-shadow);
+            z-index: 10;
+        }
+        
+        .tool-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: var(--secondary-color);
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tool-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .tool-label-btn {
+            padding: 12px 15px;
+            background: var(--light-color);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 15px;
+            transition: all 0.2s ease;
+        }
+        
+        .tool-label-btn:hover {
+            background: #e9ecef;
+        }
+        
+        .tool-label-btn.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .tool-label-btn i {
+            font-size: 18px;
+        }
+
+        .tool-label-btn:disabled {
+            background: var(--light-color);
+            color: black;
+        }
+        
+        /* Область изображения */
+        .image-area {
+            flex: 1;
+            width: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #e9ecef;
+            position: relative;
+            overflow: hidden; 
+        }
+        
+        #image-container {
+            background: white;
+            box-shadow: var(--box-shadow);
+            position: relative;
+        }
+        
+        #canvas-container {
+            position: relative;
+        }
+        
+        /* Панель объектов */
+        .objects-panel {
+            width: 280px;
+            background: white;
+            border-left: 1px solid #e0e0e0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--box-shadow);
+            z-index: 10;
+        }
+        
+        .objects-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .object-item {
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: var(--light-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+        
+        .object-item:hover {
+            background: #e9ecef;
+        }
+        
+        .object-item.active {
+            border-left: 3px solid var(--primary-color);
+            background: #e6f0ff;
+        }
+        
+        .object-label {
+            font-weight: 500;
+        }
+        
+        .object-delete {
+            color: var(--danger-color);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        /* Панель управления */
+        .control-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 300px;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .control-btn {
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: var(--box-shadow);
+            transition: all 0.2s ease;
+        }
+        
+        .control-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .control-btn:disabled {
+            background: var(--light-color);
+            color: black;
+        }
+        
+        /* Загрузчик */
+        .loader {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Навигация по изображениям */
+        .image-navigator {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: white;
+            padding: 5px 15px;
+        }
+    
+        .image-select:hover {
+            border-color: var(--accent-color);
+        }
+        
+        .image-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+        }
+        
+        .nav-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+    
+        .nav-btn:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .nav-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .image-counter {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .image-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 150px;
+        }
+
+        .minimal-select {
+            /* Основные стили */
+            padding: 8px 32px 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background-color: white;
+            font-size: 14px;
+            color: #333;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            width: 400px;
+            height: 36px;
+            transition: all 0.2s ease;
+            
+            /* Стили для стрелки */
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 8px center;
+            background-size: 16px;
+        }
+        
+        .minimal-select:hover {
+            border-color: var(--accent-color);
+        }
+        
+        .minimal-select:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+        }
+    </style>
+</head>
+<body>
+    {% include 'top-panel.html' %}
+    <style>
+        .main-content {
+            margin-bottom: 0;
+        }
+    </style>
+
+    <!-- Панель инструментов слева -->
+    <div class="tool-panel main-content">
+        <h2 class="tool-title">Инструменты</h2>
+        <div class="tool-buttons">
+            <button class="tool-label-btn tool-btn" id="pointer-tool">
+                <span>v</span> Указатель
+            </button>
+            <button class="tool-label-btn tool-btn" id="bbox-tool">
+                <span>🟦</span> Bounding Box
+            </button>
+            <button class="tool-label-btn tool-btn" id="brush-tool">
+                <span>🖌️</span> Кисть (сегментация)
+            </button>
+        </div>
+        
+        <h2 class="tool-title">Метки</h2>
+        <div id="labels-list">
+            <button class="tool-label-btn label-btn" data-label="person">Человек</button>
+            <button class="tool-label-btn label-btn" data-label="car">Автомобиль</button>
+        </div>
+    </div>
+    
+    <!-- Основная область с изображением -->
+    <div class="image-area main-content">
+        <div id="canvas-container">
+            <div id="image-container"></div>
+        </div>
+        
+        <!-- Панель управления -->
+        <div class="control-panel">
+            <button class="control-btn" id="save-btn">
+                <span>💾</span> Сохранить
+            </button>
+        </div>
+        
+        <!-- Загрузчик -->
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+        </div>
+    </div>
+    
+    <!-- Панель объектов справа -->
+    <div class="objects-panel main-content">
+        <h2 class="tool-title">Объекты</h2>
+        <div class="objects-list" id="objects-list">
+            <!-- Объекты будут добавляться здесь -->
+        </div>
+    </div>
+
+    
+    <script src="/static_annotations/main.js"></script>
+</body>
+</html>

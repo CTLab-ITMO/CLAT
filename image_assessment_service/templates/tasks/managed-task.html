@@ -1,0 +1,238 @@
+
+{% extends "tasks/base-task.html" %}
+
+
+{% block content %}
+<div class="task-card task-container">
+    <!-- Секция аннотаций -->
+    <div class="annotations-section">
+        <h2>Аннотации</h2>
+        <div class="controls">
+            <div class="param-control">
+                <label for="iou-threshold">IOU Threshold</label>
+                <input type="number" id="iou-threshold" min="0" max="1" step="0.01" value="0.4">
+            </div>
+            
+            <div class="param-control">
+                <label for="overlap">Minimum Overlap</label>
+                <input type="number" id="overlap" min="1" step="1" value="2">
+            </div>
+            
+            <button class="control-btn" id="aggregate-btn" disabled>Агрегировать выбранные</button>
+            <button class="control-btn" id="select-all-btn">Выбрать все</button>
+        </div>
+        
+        <div class="loading" id="loading" style="display:none">
+            <div class="spinner"></div>
+            <p>Processing aggregation...</p>
+        </div>
+
+        <div class="annotations-list annotations-grid" id="annotations-container">
+            <!-- Аннотации будут загружены через JavaScript -->
+            <div class="loading-spinner">Загрузка...</div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+<!-- Подключаем стили и скрипты -->
+{% block styles %}
+<style>
+    /* Стили для аннотаций */
+    .annotation-card {
+        border: 1px solid #e1e4e8;
+        border-radius: 8px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: box-shadow 0.3s ease;
+        background-color: #fff;
+    }
+    .annotation-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        cursor: pointer;
+    }
+    .annotation-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+    }
+    .annotation-user {
+        color: #2c3e50;
+    }
+    .annotation-meta {
+        display: flex;
+        gap: 12px;
+        font-size: 0.9em;
+        color: #7f8c8d;
+    }
+    .loading-spinner {
+        text-align: center;
+        padding: 20px;
+        color: #7f8c8d;
+    }
+
+    .annotations-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+
+    .annotation-card {
+        background-color: var(--light-color);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        padding: 16px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border: 1px solid #ddd;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .annotation-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .annotation-card.selected {
+        outline: 2px solid #ddd;
+        background-color: var(--primary-light);
+    }
+
+    .annotation-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+        background-color: var(--primary);
+    }
+
+    .annotation-id {
+        font-size: 12px;
+        color: var(--text-light);
+        margin-bottom: 4px;
+    }
+
+    .annotation-description {
+        font-weight: 500;
+        margin-bottom: 12px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .annotation-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 13px;
+        color: var(--text-light);
+    }
+
+    .status-badge {
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .status-pending {
+        background-color: #fff3bf;
+        color: #f08c00;
+    }
+
+    .status-completed {
+        background-color: #d3f9d8;
+        color: #2b8a3e;
+    }
+
+    .status-rejected {
+        background-color: #ffe3e3;
+        color: #c92a2a;
+    }
+
+    .checkbox-container {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+    }
+
+    .checkbox-container input {
+        width: 18px;
+        height: 18px;
+        cursor: pointer;
+    }
+
+    .view-markup-btn {
+        margin-right: 5px; 
+        padding: 6px 12px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+    }
+
+    .view-markup-btn:hover {
+        background-color: var(--secondary-color);
+    }
+
+    .control-btn {
+        margin-top: 10px;
+        padding: 6px 12px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background-color 0.3s;
+        margin-right: 10px;
+        font-weight: 700;
+    }
+
+    .control-btn:hover {
+        background-color: var(--secondary-color);
+    }
+
+
+    .control-btn:disabled {
+        background-color: var(--light-color);
+        border: 1px solid gray;
+        color: gray;
+    }
+
+    .controls {
+        margin-bottom: 20px;
+    }
+
+    .annotation-actions {
+        display: flex;
+        align-items: center; /* Выравнивание по вертикали */
+        margin-top: 10px;
+    }
+
+    .delete-markup-btn {
+        margin-left: auto; 
+        padding: 6px 12px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .delete-markup-btn:hover {
+        background-color: #c82333;
+    }
+</style>
+{% endblock %}
+
+{% block before_script %}
+<script src="/static_tasks/managed.js"></script>
+{% endblock %}

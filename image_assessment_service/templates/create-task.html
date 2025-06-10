@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    {% include 'embed-auth.html' %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать новое задание</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --success-color: #4cc9f0;
+            --warning-color: #f8961e;
+            --danger-color: #f72585;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --border-radius: 12px;
+            --box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f5f7fa;
+            color: var(--dark-color);
+            line-height: 1.6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .form-container {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+        
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-block {
+            display: block;
+            width: 100%;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: var(--border-radius);
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .upload-area i {
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+        
+        .upload-area p {
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .upload-area .small {
+            font-size: 0.9rem;
+            color: #999;
+        }
+        
+        .preview-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-item img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .preview-item .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 25px;
+            height: 25px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .preview-item:hover .remove-btn {
+            opacity: 1;
+        }
+        
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        .tag {
+            display: flex;
+            align-items: center;
+            background-color: var(--light-color);
+            padding: 10px 16px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .tag-remove {
+            margin-left: 6px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .tag-remove:hover {
+            color: var(--danger-color);
+        }
+        
+        .tag-input-container {
+            position: relative;
+        }
+        
+        .tag-input {
+            padding-right: 40px;
+        }
+        
+        .tag-add-btn {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            cursor: pointer;
+            font-size: 1.5rem;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin: 30px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            color: var(--danger-color);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .success-message {
+            background-color: rgba(76, 201, 240, 0.1);
+            color: var(--success-color);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .upload-progress {
+            margin-top: 10px;
+            width: 100%;
+            background: #f0f0f0;
+            border-radius: 5px;
+            display: none;
+        }
+        .progress-bar {
+            height: 20px;
+            background: #4361ee;
+            border-radius: 5px;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        .status {
+            margin-top: 5px;
+            font-size: 14px;
+        }
+        .error {
+            color: #f72585;
+        }
+    </style>
+</head>
+<body>
+    {% include 'top-panel.html' %}
+    <div class="container main-content">
+        <div class="header">
+            <h1>Создать новое задание</h1>
+            <p>Заполните форму для создания задания на разметку изображений</p>
+        </div>
+        
+        <div class="success-message" id="successMessage">
+            <i class="fas fa-check-circle"></i> Задание успешно создано и отправлено на модерацию!
+        </div>
+        
+        <form id="taskForm" class="form-container">
+            <div class="form-group">
+                <label for="title">Название задания</label>
+                <input type="text" id="title" class="form-control" placeholder="Например: Разметка автомобилей на дороге" required>
+                <div class="error-message" id="titleError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Описание задания</label>
+                <textarea id="description" class="form-control" placeholder="Опишите цель задания и контекст использования данных.&#10;&#10;Укажите бенефиты, которые можно получить за успешное выполнение. Например так:&#10;Анализ данных: 10 баллов&#10;Машинное обучени: 5 баллов" required></textarea>
+                <div class="error-message" id="descriptionError"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="instructions">Инструкции по разметке</label>
+                <textarea id="instructions" class="form-control" placeholder="Подробно опишите как нужно размечать изображения. Какие объекты выделять, какие исключать и т.д." required></textarea>
+                <div class="error-message" id="instructionsError"></div>
+            </div>
+
+            <h3 class="section-title">Параметры выполнения</h3>
+            
+            <div class="form-group">
+                <label for="annotatorsCount">Количество аннотаторов (от 1 до 100)</label>
+                <input type="number" id="annotatorsCount" class="form-control" min="1" max="100" placeholder="Введите число от 1 до 100" required>
+                <div class="error-message" id="annotatorsCountError"></div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group form-col">
+                    <label for="daysToComplete">Дней на выполнение</label>
+                    <input type="number" id="daysToComplete" class="form-control" min="0" max="365" placeholder="0" required>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="deadline">Дедлайн</label>
+                <input type="datetime-local" id="deadline" class="form-control" required>
+                <div class="error-message" id="deadlineError"></div>
+            </div>
+            
+            <h3 class="section-title">Изображения для разметки</h3>
+            <div class="form-group">
+                <div id="uploadArea" class="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Перетащите сюда изображения или кликните для выбора</p>
+                    <p class="small">Поддерживаются форматы JPG, PNG, WEBP. Максимальный размер файла 5MB.</p>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple style="display: none;">
+                </div>
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar" id="progressBar"></div>
+                    <div class="progress-text" id="progressText">0%</div>
+                </div>
+                <div class="batch-info" id="batchInfo"></div>
+                <div id="previewContainer" class="preview-container"></div>
+                <div class="error-message" id="imagesError"></div>
+            </div>
+            
+            <h3 class="section-title">Метки для bounding box</h3>
+            <div class="form-group">
+                <div class="tag-input-container">
+                    <input type="text" id="bboxInput" class="form-control tag-input" placeholder="Введите название метки и нажмите +">
+                    <button type="button" id="addBboxTag" class="tag-add-btn">+</button>
+                </div>
+                <div id="bboxTags" class="tags-container"></div>
+                <div class="error-message" id="bboxError"></div>
+            </div>
+            
+            <h3 class="section-title">Метки для сегментации</h3>
+            <div class="form-group">
+                <div class="tag-input-container">
+                    <input type="text" id="segmentationInput" class="form-control tag-input" placeholder="Введите название метки и нажмите +">
+                    <button type="button" id="addSegmentationTag" class="tag-add-btn">+</button>
+                </div>
+                <div id="segmentationTags" class="tags-container"></div>
+                <div class="error-message" id="segmentationError"></div>
+            </div>
+            
+            <button type="submit" class="btn btn-block" id="submitBtn">
+                <span id="submitText">Отправить на модерацию</span>
+                <div id="submitSpinner" class="spinner" style="display: none; margin: 0 auto;"></div>
+            </button>
+
+            <div class="upload-progress" id="uploadProgress">
+                <div class="progress-bar" id="progressBar"></div>
+                <div class="status" id="statusText"></div>
+            </div>
+        </form>
+    </div>
+    <script src="/static_tasks/create.js"></script>
+</body>
+</html>

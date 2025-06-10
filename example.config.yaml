@@ -1,0 +1,15 @@
+postgres:
+  host: 192.111.111.111
+
+storages:
+  tech:
+    continue_assess: True
+    path: path/to/your/data
+    out_path: path/to/out/assessed/data
+  aesth:
+    continue_assess: True
+    path: path/to/your/data
+    out_path: path/to/out/assessed/data
+
+tasks:
+  base_path: path/to/task/dir

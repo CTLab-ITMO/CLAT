@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    {% include 'embed-auth.html' %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+            --error-color: #f72585;
+            --success-color: #4cc9f0;
+            --border-radius: 8px;
+            --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', sans-serif;
+            line-height: 1.6;
+            color: var(--dark-color);
+            background-color: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .admin-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        
+        .users-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .users-table th, .users-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .users-table th {
+            background-color: var(--light-color);
+            font-weight: 500;
+        }
+        
+        .users-table tr:hover {
+            background-color: rgba(67, 97, 238, 0.05);
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            margin-right: 5px;
+        }
+        
+        .role-admin {
+            background-color: #f72585;
+            color: white;
+        }
+        
+        .role-teacher {
+            background-color: #4895ef;
+            color: white;
+        }
+        
+        .role-select {
+            padding: 6px 10px;
+            border-radius: var(--border-radius);
+            border: 1px solid #ddd;
+            min-width: 120px;
+        }
+        
+        .btn-save {
+            background: var(--success-color);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-save:hover {
+            background: #3aa8d8;
+        }
+        
+        .error-message {
+            color: var(--error-color);
+            margin-top: 20px;
+            padding: 10px;
+            background-color: rgba(247, 37, 133, 0.1);
+            border-radius: var(--border-radius);
+            display: none;
+        }
+        
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    {% include 'top-panel.html' %}
+    <div class="container main-content">
+        <div class="admin-card">
+            <div class="admin-header">
+                <h1 class="admin-title">Управление пользователями</h1>
+            </div>
+            
+            <div class="error-message" id="error-message"></div>
+            
+            <table class="users-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Никнейм</th>
+                        <th>Email</th>
+                        <th>Роли</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="users-list">
+                    <tr>
+                        <td colspan="5">
+                            <div class="loading">
+                                <div class="spinner"></div>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                // Получаем список пользователей
+                const response = await fetch('/api/admin/users');
+                
+                if (response.status === 403) {
+                    document.getElementById('error-message').style.display = 'block';
+                    document.getElementById('error-message').textContent = 'Доступ запрещен';
+                    return;
+                }
+                
+                if (!response.ok) {
+                    throw new Error('Ошибка загрузки данных');
+                }
+                
+                const users = await response.json();
+                renderUsers(users);
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        });
+        
+        function renderUsers(users) {
+            const tbody = document.getElementById('users-list');
+            tbody.innerHTML = '';
+            
+            users.forEach(user => {
+                const tr = document.createElement('tr');
+                
+                tr.innerHTML = `
+                    <td>${user.id}</td>
+                    <td>${user.nickname}</td>
+                    <td>${user.email}</td>
+                    <td>
+                        <div class="roles-container" id="roles-${user.id}">
+                            ${user.roles.map(role => `
+                                <span class="role-badge role-${role}">${role}</span>
+                            `).join('')}
+                        </div>
+                    </td>
+                    <td>
+                        <select class="role-select" id="role-select-${user.id}">
+                            <option value="">Выберите роль</option>
+                            <option value="admin">admin</option>
+                            <option value="teacher">teacher</option>
+                        </select>
+                        <button class="btn-save" onclick="addRole(${user.id})">Добавить</button>
+                        <button class="btn-save" onclick="removeRoles(${user.id})">Удалить</button>
+                    </td>
+                `;
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        async function addRole(userId) {
+            const select = document.getElementById(`role-select-${userId}`);
+            const role = select.value;
+            
+            if (!role) return;
+            
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/roles`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role })
+                });
+                
+                if (response.ok) {
+                    const users = await response.json();
+                    renderUsers(users);
+                } else {
+                    throw new Error('Ошибка при добавлении роли');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+        
+        async function removeRoles(userId) {
+            const select = document.getElementById(`role-select-${userId}`);
+            const role = select.value;
+            
+            if (!role) return;
+
+            try {
+                const response = await fetch(`/api/admin/users/${userId}/roles`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ role })
+                });
+                
+                if (response.ok) {
+                    const users = await response.json();
+                    renderUsers(users);
+                } else {
+                    throw new Error('Ошибка при удалении ролей');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('error-message').textContent = error.message;
+            }
+        }
+        
+        function updateUserRoles(user) {
+            const container = document.getElementById(`roles-${user.id}`);
+            container.innerHTML = user.roles.map(role => `
+                <span class="role-badge role-${role}">${role}</span>
+            `).join('');
+        }
+    </script>
+</body>
+</html>
