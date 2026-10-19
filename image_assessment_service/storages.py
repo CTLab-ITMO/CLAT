@@ -1,8 +1,7 @@
 from typing import Dict
 
 from com.utils import SingletonVec
-from com.storage import Storage, LocalStorage, LocalStorageConfig
-from image_assessment_service.config import get_config, LocalStorageConfig as lsg
+from com.storage import LocalStorage, LocalStorageConfig, Storage
 
 
 class Storages(metaclass=SingletonVec):
@@ -10,9 +9,9 @@ class Storages(metaclass=SingletonVec):
 
     def get(self, code: str):
         if code not in self.__storages:
-            storage_cfg = get_config().storages[code]
-            if not isinstance(storage_cfg, lsg):
-                raise RuntimeError(f'Unsupported storage type with code [{code}]')
-            cfg = LocalStorageConfig(storage_cfg.code, {'path':storage_cfg.path})
+            from image_assessment_service.assessment.services.base import AssessmentService
+
+            path = str(AssessmentService.resolve_path(code))
+            cfg = LocalStorageConfig(code, {'path': path})
             self.__storages[code] = LocalStorage(cfg)
         return self.__storages[code]

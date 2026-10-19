@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from image_assessment_service.core.aggregation.aggregator import AnnotationAggregator
-from image_assessment_service.core.aggregation.models import BBox
+from image_assessment_service.core.aggregation.models import BBox, Image, Segment
 
 
 class TestAnnotationAggregator:
@@ -163,3 +163,150 @@ class TestAnnotationAggregator:
         aggregator = AnnotationAggregator(threshold_iou=0.4, min_overlap=2)
         result = aggregator.aggregate(bboxes)
         assert len(result) == 2  # Два отдельных кластера cat
+
+    @pytest.fixture
+    def sample_segments(self):
+        return [
+            Segment(
+                id=1, label="cat", points=np.array([10, 10, 50, 10, 50, 50, 10, 50])
+            ),
+            Segment(
+                id=2, label="cat", points=np.array([12, 12, 52, 12, 52, 52, 12, 52])
+            ),
+            Segment(
+                id=3,
+                label="dog",
+                points=np.array([100, 100, 150, 100, 150, 150, 100, 150]),
+            ),
+            Segment(
+                id=4,
+                label="dog",
+                points=np.array([102, 102, 152, 102, 152, 152, 102, 152]),
+            ),
+        ]
+
+    @pytest.fixture
+    def sample_images(self):
+        return [
+            Image(id=1, label="car"),
+            Image(id=2, label="car"),
+            Image(id=3, label="bike"),
+            Image(id=4, label="bike"),
+            Image(id=5, label="bike"),
+        ]
+
+    # Тесты для Segment
+    def test_segment_aggregation_basic(self, sample_segments):
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        result = aggregator.aggregate(sample_segments)
+
+        assert len(result) == 2  # Один кластер для cat, один для dog
+        assert all(isinstance(ann, Segment) for ann in result)
+        assert {ann.label for ann in result} == {"cat", "dog"}
+
+    def test_segment_aggregation_no_overlap(self):
+        segments = [
+            Segment(
+                id=1, label="cat", points=np.array([10, 10, 20, 10, 20, 20, 10, 20])
+            ),
+            Segment(
+                id=2,
+                label="cat",
+                points=np.array([100, 100, 110, 100, 110, 110, 100, 110]),
+            ),
+        ]
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        assert len(aggregator.aggregate(segments)) == 0
+
+    def test_segment_aggregation_partial_overlap(self):
+        segments = [
+            Segment(
+                id=1, label="cat", points=np.array([10, 10, 50, 10, 50, 50, 10, 50])
+            ),
+            Segment(
+                id=2, label="cat", points=np.array([30, 30, 70, 30, 70, 70, 30, 70])
+            ),
+        ]
+        aggregator = AnnotationAggregator(threshold_iou=0.1, min_overlap=2)
+        result = aggregator.aggregate(segments)
+        assert len(result) == 1
+        assert result[0].label == "cat"
+
+    def test_segment_aggregation_identical(self):
+        points = np.array([10, 10, 50, 10, 50, 50, 10, 50])
+        segments = [
+            Segment(id=1, label="cat", points=points.copy()),
+            Segment(id=2, label="cat", points=points.copy()),
+        ]
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        result = aggregator.aggregate(segments)
+        assert len(result) == 1
+        np.testing.assert_array_equal(result[0].points, points)
+
+    def test_segment_aggregation_degenerate(self):
+        segments = [
+            Segment(
+                id=1, label="cat", points=np.array([10, 10, 20, 10, 10, 10])
+            ),  # Линия
+            Segment(
+                id=2, label="cat", points=np.array([10, 10, 10, 20, 10, 10])
+            ),  # Линия
+        ]
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        assert len(aggregator.aggregate(segments)) == 0
+
+    # Тесты для Image
+    def test_image_aggregation_basic(self, sample_images):
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        result = aggregator.aggregate(sample_images)
+
+        assert len(result) == 1  # Только одна агрегированная метка
+        assert isinstance(result[0], Image)
+        assert result[0].label == "bike"  # bike встречается чаще
+
+    def test_image_aggregation_tie(self):
+        images = [
+            Image(id=1, label="car"),
+            Image(id=2, label="bike"),
+        ]
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        result = aggregator.aggregate(images)
+        assert len(result) == 1
+        assert result[0].label in {"car", "bike"}  # Любая из меток
+
+    def test_image_aggregation_single(self):
+        image = Image(id=1, label="car")
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        result = aggregator.aggregate([image])
+        assert len(result) == 1
+        assert result[0].label == "car"
+
+    def test_image_aggregation_empty(self):
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        assert aggregator.aggregate([]) == []
+
+    # Комбинированные тесты
+    def test_mixed_annotation_types(self):
+        annotations = [
+            BBox(id=1, label="cat", coords=np.array([10, 10, 50, 50])),
+            BBox(id=2, label="cat", coords=np.array([12, 12, 52, 52])),
+            Segment(
+                id=3,
+                label="dog",
+                points=np.array([100, 100, 150, 100, 150, 150, 100, 150]),
+            ),
+            Segment(
+                id=4,
+                label="dog",
+                points=np.array([102, 102, 152, 102, 152, 152, 102, 152]),
+            ),
+            Image(id=5, label="car"),
+            Image(id=6, label="car"),
+        ]
+        aggregator = AnnotationAggregator(threshold_iou=0.5, min_overlap=2)
+        result = aggregator.aggregate(annotations)
+
+        assert len(result) == 3  # cat bbox, dog segment, car image
+        assert sum(isinstance(ann, BBox) for ann in result) == 1
+        assert sum(isinstance(ann, Segment) for ann in result) == 1
+        assert sum(isinstance(ann, Image) for ann in result) == 1

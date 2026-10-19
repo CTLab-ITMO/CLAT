@@ -18,17 +18,46 @@ def mock_config(monkeypatch, tmp_path):
             "user": "",
             "password": "",
         },
-        "storages": {
-            "tech": {
-                "path": "",
-                "out_path": "",
+        "services": {
+            "detection": {
+                "enabled": True,
+                "path": str(tmp_path / "data/tasks_data"),
             },
-            "aesth": {
-                "path": "",
-                "out_path": "",
+            "segmentation": {
+                "enabled": True,
+                "path": str(tmp_path / "data/tasks_data"),
+            },
+            "classification": {
+                "enabled": True,
+                "features": {
+                    "tech": {
+                        "enabled": True,
+                        "assess_type": "continue",
+                        "vote_number": 0,
+                        "path": str(tmp_path / "data/images"),
+                    },
+                    "aesth": {
+                        "enabled": True,
+                        "assess_type": "continue",
+                        "vote_number": 0,
+                        "path": str(tmp_path / "data/images"),
+                    },
+                    "filter": {
+                        "enabled": True,
+                        "assess_type": "continue",
+                        "vote_number": 0,
+                        "path": str(tmp_path / "data/images"),
+                    },
+                    "classify": {
+                        "enabled": False,
+                        "assess_type": "continue",
+                        "vote_number": 0,
+                        "path": str(tmp_path / "data/images"),
+                        "example_dir": str(tmp_path / "data/example_data"),
+                    },
+                },
             },
         },
-        "tasks": {"base_path": str(tmp_path / "data/tasks_data")},
     }
 
     _config_instance = Config.model_validate(base_test_config)

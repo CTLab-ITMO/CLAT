@@ -1,9 +1,9 @@
 ## Запуск в docker
 
 Перед запуском необходимо создать и настроить:
-- .env (пример: example.env)
-- Создать и настроить под себя config.yaml (пример - example.config.yaml) . Есть  image_assessment_service/resources/config.yaml - его трогать не нужно
-- Настроить папку с данными, которые надо разметить (DATA_VOLUME_PATH в .ENV): 
+- `.env` (пример в `example.env`)
+- Конфиг `resources/configs/docker-config.yaml` (пути фич резолвятся от `storages.default.path`, который в контейнере = `/app/data`)
+- Настроить папку с данными, которые надо разметить (`DATA_VOLUME_PATH` в `.env`): 
 
 ```fish
  need_assess/
@@ -21,23 +21,24 @@
       └── last_img.ext
 ```
 
-После настройки .env и image_assessment_service/resources/config.yaml, запустить docker
+После настройки `.env` и `resources/configs/docker-config.yaml`, запустить docker:
 ```bash
-docker composec up -d
+docker compose up --build
 ```
+После успешного запуска, приложение будет доступно по ссылке `http://127.0.0.1:3333/assess/main/` 
 
 ## Запуск без docker
 - Запустить postgres и создать базу данных
 - Установить переменную окружения POSTGRES_PASSWORD
 - Добавить репозиторий в PYTHONPATH
-- Настроить local.config.yaml (пример - example.local.config.yaml)
+- Настроить `resources/configs/local.yaml`
 - Запустить image_assessment_service/cli.py
 
 
 ```bash
 export POSTGRES_PASSWORD=mypassword
 export PYTHONPATH="${PYTHONPATH}:path/to/light-data-assessment"
-python image_assessment_service/cli.py --config local.config.yaml
+python image_assessment_service/cli.py --config resources/configs/local.yaml
 ```
 
 ## Тесты

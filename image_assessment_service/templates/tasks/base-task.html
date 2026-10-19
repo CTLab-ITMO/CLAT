@@ -130,6 +130,7 @@
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            margin-bottom: 15px;
         }
         
         .label-item {
@@ -195,7 +196,6 @@
             background: red;
         }
         
-        
         .loading {
             display: flex;
             justify-content: center;
@@ -215,6 +215,73 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* New styles for attributes */
+        .attributes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .attribute-card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 15px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .attribute-name {
+            font-weight: 500;
+            margin-bottom: 5px;
+            color: var(--secondary-color);
+        }
+
+        .attribute-type {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .attribute-options {
+            font-size: 14px;
+            color: #444;
+            padding-left: 15px;
+        }
+
+        .attribute-options li {
+            margin-bottom: 3px;
+        }
+
+        .type-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .type-number {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .type-flag {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .type-categorical {
+            background: #f3e5f5;
+            color: #8e24aa;
+        }
+
+        .type-text {
+            background: #fff3e0;
+            color: #f57c00;
+        }
     </style>
     {% block styles %}{% endblock %}
 </head>
@@ -226,6 +293,35 @@
                 <h1 class="task-title" id="task-title">Загрузка...</h1>
                 <span class="task-id" id="task-id">#ID</span>
             </div>
+
+            <div class="task-section">
+                <h2 class="section-title">Инструкция по работе с редактором</h2>
+                <p class="task-description">
+                    На вкладке <b>"курсор"</b> вы можете изменять масштаб, двигать картинки. Для этого используется колесо мышки и перетаскивание по экрану.
+                    Также здесь можно изменять текущие сегменты и bbox-ы: для этого просто нажмите на фигуру сегмента/bbox-а и начните перетягивать за уголки. После изменений нужно будет нажать "Сохранить".
+                </p>
+                <br/>
+
+                <p class="task-description">
+                    Вкладка <b>"bbox"</b> появляется, если в задание добавлены категории на детекцию.
+                    После перехода на эту вкладку и зажатия мыши, вы начнете задавать bbox (для этого нужно зажать мышь и потянуть).
+                    После создания bbox-а справа будет возможность выбрать категорию, к которой относится отмеченный объект.
+                    Для сохранения нажать "Сохранить".
+                </p>
+                <br/>
+
+                <p class="task-description">
+                    Вкладка <b>"сегментация"</b> позволяет разбить изображение на сегменты соответствующие меткам. Для добавления сегмента кликните на изображение.
+                    По-очередно кликайте на места, где должны быть вершины полигона.
+                    По-завершении нажмите <b>"Enter"</b> - полигон зафиксируется и появится справа в списке объектов.
+                    После этого можно будет поменять тип, к которому относится сегмент, и сохранить его.
+                </p>
+                <br/>
+
+                <p class="task-description">
+                    <b>Не нажав "Сохранить" и уйдя с вкладки вы рискуете потерять размеченные сегменты!</b>
+                </p>
+            </div>
             
             <div class="task-section">
                 <h2 class="section-title">Описание</h2>
@@ -233,7 +329,7 @@
             </div>
             
             <div class="task-section">
-                <h2 class="section-title">Инструкция</h2>
+                <h2 class="section-title">Инструкция по разметке</h2>
                 <p class="task-description" id="task-instructions"></p>
             </div>
             
@@ -251,13 +347,24 @@
                 <h2 class="section-title">Метки</h2>
                 <div class="labels-container">
                     <div class="label-group">
-                        <h3 class="section-title">Bounding Boxes</h3>
+                        <h3 class="section-title">Детекция</h3>
                         <ul class="label-list" id="bbox-labels"></ul>
                     </div>
                     <div class="label-group">
                         <h3 class="section-title">Сегментация</h3>
                         <ul class="label-list" id="segmentation-labels"></ul>
                     </div>
+                    <div class="label-group">
+                        <h3 class="section-title">Классификация</h3>
+                        <ul class="label-list" id="image-labels"></ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-section">
+                <h2 class="section-title">Атрибуты</h2>
+                <div class="attributes-container" id="attributes-list">
+                    <!-- Атрибуты будут добавляться здесь -->
                 </div>
             </div>
             

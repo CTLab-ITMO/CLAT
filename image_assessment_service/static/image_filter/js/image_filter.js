@@ -20,6 +20,7 @@ $(function () {
 
     let current_fid = null;
     let isLoading = false;
+    let noMoreData = false;
 
     const showLoading = (show) => {
         isLoading = show;
@@ -36,6 +37,22 @@ $(function () {
         setTimeout(() => $('#errorAlert').addClass('d-none'), 5000);
     };
 
+    const showNoDataMessage = () => {
+        noMoreData = true;
+        $('.row.mb-3').addClass('d-none');
+        $('.container .justified-text').addClass('d-none');
+        $('.button-container').addClass('d-none');
+        $('#noDataMessage').removeClass('d-none');
+    };
+
+    const showClassificationInterface = () => {
+        noMoreData = false;
+        $('.row.mb-3').removeClass('d-none');
+        $('.container .justified-text').removeClass('d-none');
+        $('.button-container').removeClass('d-none');
+        $('#noDataMessage').addClass('d-none');
+    };
+
     const get_next_fn = function () {
         showLoading(true);
 
@@ -47,14 +64,35 @@ $(function () {
                 timeout: 60000,
                 success: function (data) {
                     console.log("retrieve new anno data");
-                    console.dir(data)
-                    current_fid=null;
-                    var img_url = 'img/document.e9ed1d59.png';
+                    console.dir(data);
+
+                    if (!data || data['fid'] === 'null' || data['fid'] === null) {
+                        showNoDataMessage();
+                        current_fid = null;
+
+                        if (data && data['metrics']) {
+                            let m = data['metrics'];
+                            $('#metrics_label').text(
+                                'Количество ваших ответов: ' + m['user_answers']
+                            );
+                        }
+                        
+                        resolve(null);
+                        return;
+                    }
+
+                    showClassificationInterface();
+                    
+                    current_fid = null;
+                    let img_url = '../common/img/document.e9ed1d59.png';
+
                     if (data['fid'] !== 'null') {
                         current_fid = data['fid'];
                         img_url = '/assess/image_filter/file?s=' + data['file']['storage'] + '&p=' + data['file']['path'] + '&f=' + data['file']['name'];
                     }
+                    
                     $('#sample_img').attr('src', img_url);
+                    
                     if (data['metrics']) {
                         let m = data['metrics'];
                         $('#metrics_label').text(
@@ -68,6 +106,8 @@ $(function () {
                     if (xhr.status === 401) {
                         sessionStorage.removeItem('access_token');
                         window.location.href = '/';
+                    } else if (xhr.status === 503) {
+                        showServiceUnavailable();
                     } else {
                         showError('Failed to load next image. Please try again.');
                     }
@@ -81,7 +121,7 @@ $(function () {
     };
 
     const mark_fn = async function (type, fid) {
-        if (isLoading) return;
+        if (isLoading || noMoreData) return;
 
         if (!fid) {
             fid = await get_next_fn();
@@ -93,12 +133,11 @@ $(function () {
         $.ajax({
             url: '/assess/image_filter/mark?'  + $.param({fid: fid, type: type, token: token}) ,
             type: 'post',
-            // data: {fid: fid, type: type, token: token},
             cache: false,
             timeout: 60000,
             success: async function () {
                 console.log("success mark " + type + " [" + fid + "]");
-                current_fid=null;
+                current_fid = null;
                 await updateStatsAfterRating(); // Wait for stats to update
                 get_next_fn();
             },
@@ -252,6 +291,7 @@ $(function () {
     // Initialize button handlers
     // Button 5
     $('#btn_5').click(function(evt) {
+        if (noMoreData) return false;
         mark_fn('5', current_fid);
         if (evt) evt.preventDefault();
         return false;
@@ -259,6 +299,7 @@ $(function () {
 
     // Button 0
     $('#btn_0').click(function(evt) {
+        if (noMoreData) return false;
         mark_fn('0', current_fid);
         if (evt) evt.preventDefault();
         return false;
@@ -266,7 +307,7 @@ $(function () {
 
     // Keep your existing keyboard handler
     $(window).on("keyup", function(evt) {
-        if (isLoading) return;
+        if (isLoading || noMoreData) return;
         const key = evt.key;
         if (key >= '0' && key <= '5') {
             mark_fn(key, current_fid);

@@ -1,6 +1,6 @@
 import structlog
 
-from image_assessment_service.config import load_config, get_config
+from image_assessment_service.config import load_config
 
 
 def cli_runner():
@@ -9,12 +9,12 @@ def cli_runner():
     logger.info(f'Use config: {args.config_path}')
 
     load_config(args.config_path)
-    config = get_config()
-    logger.info("Config loaded")
 
-    from image_assessment_service.app import build_app, run_app
-    app = build_app()
-    run_app(app, config.application.host, config.application.port)
+    from image_assessment_service.assessment.app import AssessmentApp
+
+    service_codes = args.services.split(",") if args.services else None
+    AssessmentApp(service_codes=service_codes).run()
+
 
 def parse_args():
     import argparse
@@ -27,9 +27,14 @@ def parse_args():
         help='Path to configuration file',
         type=pathlib.Path
     )
+    parser.add_argument(
+        '--services',
+        dest='services',
+        help='Comma-separated list of service/feature codes to run (e.g. tech,filter). By default runs all enabled',
+        default=None,
+    )
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     cli_runner()
-

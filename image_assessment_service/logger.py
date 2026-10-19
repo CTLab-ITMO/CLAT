@@ -12,6 +12,7 @@ LOG_LEVELS = {
     'CRITICAL': logging.CRITICAL,
 }
 
+
 def set_log_level(level: int = LOG_LEVELS['INFO'], specify: Optional[Dict[str, int]] = None):
     """ Задает уровень логирования для приложения и сторонних библиотек
 
@@ -28,18 +29,25 @@ def set_log_level(level: int = LOG_LEVELS['INFO'], specify: Optional[Dict[str, i
     Дополнительно можно указать уровни логирования для конкретного логера в виде словаря:
     `{'logger_name': LOG_LEVELS['lvl'], ...}`
     """
+    _set_third_party_levels()
+    _apply_specific_levels(specify)
+    logging.getLogger().setLevel(level)
+
+
+def _set_third_party_levels() -> None:
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    for logger in loggers:
+        logger.setLevel(logging.WARNING)
+
+
+def _apply_specific_levels(specify: Optional[Dict[str, int]]) -> None:
     specify_default = {
         'multipart': LOG_LEVELS['WARNING'],
         'multipart.multipart': LOG_LEVELS['WARNING'],
         'uvicorn.error': LOG_LEVELS['INFO']
     }
-    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
-    for logger in loggers:
-        logger.setLevel(logging.WARNING)
 
     specify = specify_default if specify is None else specify_default | specify
 
     for logger_name, logger_level in specify.items():
         logging.getLogger(logger_name).setLevel(logger_level)
-
-    logging.getLogger().setLevel(level)

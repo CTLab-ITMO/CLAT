@@ -9,17 +9,16 @@ from image_assessment_service.autorization.controllers.utils import (
 from image_assessment_service.config import get_config, get_templates
 from image_assessment_service.dependencies import get_container
 from image_assessment_service.validation import validate_image_name
+from image_assessment_service.core.services.consts import TaskFileTypes
+from image_assessment_service.autorization.models.core import User
 
 admin_service = get_container().admin_service
 annotation_service = get_container().annotation_service
 data_uploader_service = get_container().data_uploader_service
 task_service = get_container().task_service
 
-config = get_config().tasks
 templates = get_templates()
 router = APIRouter()
-
-from image_assessment_service.autorization.models.core import User
 
 ### static ###
 
@@ -51,9 +50,18 @@ async def create_task_page(request: Request):
 async def list_annotations(
     request: Request, task_id: int, user: User = Depends(get_current_user)
 ):
-    assert await task_service.is_owner(task_id, user.id)
-    annotations = await annotation_service.get_task_annotations_with_users(task_id)
-    return annotations
+    roles = [r.name for r in await admin_service.get_user_roles(user.id)]
+    has_access = False
+    if "admin" in roles:
+        has_access = True
+    elif "teacher" in roles:
+        if await task_service.is_owner(task_id, user.id):
+            has_access = True
+
+    if has_access:
+        return await annotation_service.get_task_annotations_with_users(task_id)
+    else:
+        raise HTTPException(403)
 
 
 @router.post("/api/tasks/{task_id}/create-annotation")
@@ -68,8 +76,7 @@ async def create_annotation(
 async def annotation_status(
     request: Request, task_id: int, user: User = Depends(get_current_user)
 ):
-    annotation_status = await annotation_service.get_annotation_status(task_id, user.id)
-    return annotation_status
+    return await annotation_service.get_annotation_status(task_id, user.id)
 
 
 @router.get("/api/tasks")
@@ -133,13 +140,21 @@ async def init_upload(
 
 @router.post("/api/tasks/{task_id}/upload-file")
 async def upload_file(
+    request: Request,
     task_id: int,
     file: UploadFile,
     user: User = Depends(require_role("admin", "teacher")),
 ):
     try:
-        validate_image_name(file.filename)
-        await data_uploader_service.upload_file(task_id, file)
+        file_type = request.query_params.get('file_type')
+
+        _validate_file_type(file_type)
+
+        if file_type == TaskFileTypes.FILE_TYPE_IMAGE:
+            await _upload_image_file(task_id, file)
+        if file_type == TaskFileTypes.FILE_TYPE_SEGMENTATION_DRAFT:
+            await _upload_segmentation_draft(task_id, file)
+
         return {"status": "success"}
     except Exception as e:
         return HTTPException(400, e)
@@ -155,3 +170,37 @@ async def finish_upload(
         return {"status": "success"}
     except Exception as e:
         return HTTPException(400, e)
+
+
+def _validate_file_type(file_type) -> None:
+    if file_type not in TaskFileTypes.VALID_FILE_TYPES:
+        raise HTTPException(400, "Невалидный тип изображения")
+
+
+async def _upload_image_file(task_id: int, file: UploadFile) -> None:
+    validate_image_name(file.filename)
+    await data_uploader_service.upload_file(task_id, file, TaskFileTypes.FILE_TYPE_IMAGE)
+
+
+async def _upload_segmentation_draft(task_id: int, file: UploadFile) -> None:
+    content = await file.read()
+    draft_data = json.loads(content)
+    if not isinstance(draft_data, dict):
+        raise HTTPException(400, "illegal JSON file format")
+
+    for image_name, data in draft_data.items():
+        filename = f"{image_name}.json"
+        json_file = __dict_to_uploadfile(data, filename)
+        await data_uploader_service.upload_file(task_id, json_file, TaskFileTypes.FILE_TYPE_SEGMENTATION_DRAFT)
+
+
+def __dict_to_uploadfile(data: dict, filename: str) -> UploadFile:
+    from io import BytesIO
+    json_bytes = json.dumps(data, ensure_ascii=False, indent=2).encode("utf-8")
+
+    file_like = BytesIO(json_bytes)
+
+    return UploadFile(
+        filename=filename,
+        file=file_like
+    )

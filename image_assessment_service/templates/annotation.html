@@ -125,7 +125,7 @@
             width: 280px;
             background: white;
             border-left: 1px solid #e0e0e0;
-            padding: 20px;
+            padding: 5px;
             display: flex;
             flex-direction: column;
             box-shadow: var(--box-shadow);
@@ -157,6 +157,12 @@
         .object-item.active {
             border-left: 3px solid var(--primary-color);
             background: #e6f0ff;
+        }
+
+        .annotation-item.active {
+            background-color: #f0f0f0;
+            border: 2px solid #6f6f6f;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.15);
         }
         
         .object-label {
@@ -315,6 +321,227 @@
             border-color: var(--primary-color);
             box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
         }
+
+        /* annotations list */
+        /* Основные стили для элемента аннотации */
+        .annotation-item {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background-color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        /* Стили для заголовка */
+        .annotation-header {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            background-color: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .annotation-label-select {
+            flex: 1;
+            padding: 5px 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-right: 8px;
+            font-size: 14px;
+            background-color: #fff;
+            min-width: 120px;
+            max-width: 200px;
+        }
+
+        .annotation-label-select:disabled {
+            background-color: #f9f9f9;
+            border-color: #eee;
+        }
+
+        .annotation-type-badge {
+            padding: 3px 8px;
+            background-color: #e0e0e0;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 8px;
+            color: #555;
+            white-space: nowrap;
+        }
+
+        .annotation-toggle-attrs,
+        .annotation-delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 2px 8px;
+            font-size: 14px;
+            color: #777;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+        }
+
+        .annotation-delete-btn {
+            color: #e74c3c;
+            margin-left: 4px;
+        }
+
+        .annotation-toggle-attrs:hover,
+        .annotation-delete-btn:hover {
+            background-color: #e0e0e0;
+        }
+
+        /* Стили для контейнера атрибутов */
+        .annotation-attributes {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .annotation-attributes.expanded {
+            max-height: 1000px;
+            padding: 8px 12px;
+        }
+
+        .annotation-attributes.expanded {
+            max-height: 1000px;
+            padding: 6px 0;
+        }
+
+        .annotation-attribute {
+            display: grid;
+            grid-template-columns: 1fr 24px;
+            grid-template-areas: 
+                "key delete"
+                "value value";
+            gap: 0px, 2px;
+            padding: 0px 8px;
+            margin-bottom: 4px;
+            align-items: center;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            min-width: 0; /* Важно для работы overflow */
+        }
+
+        .attribute-key {
+            color: #444;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            overflow-x: auto; /* Горизонтальная прокрутка */
+        }
+
+        .attribute-value-container {
+            min-width: 0;
+            display: flex;
+        }
+
+        .annotation-attribute input[type="text"],
+        .annotation-attribute input[type="number"],
+        .annotation-attribute select {
+            width: 100%;
+            padding: 4px 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .annotation-attribute input[type="checkbox"] {
+            margin: 0;
+            transform: scale(1.1);
+        }
+
+        .attribute-delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #e74c3c;
+            /* padding: 2px; */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .attribute-delete-btn:disabled {
+            color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .attribute-delete-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        /* Стиль для кнопки добавления атрибута */
+        .annotation-add-attr-btn {
+            width: 100%;
+            padding: 8px;
+            margin-top: 8px;
+            background-color: #f0f0f0;
+            border: 1px dashed #999;
+            border-radius: 4px;
+            cursor: pointer;
+            color: #555;
+            font-size: 13px;
+            display: block;
+        }
+
+        .annotation-add-attr-btn:hover {
+            background-color: #e9e9e9;
+            border-color: #777;
+        }
+
+        .attribute-key-wrapper {
+            grid-area: key;
+            min-width: 0; /* Важно для работы overflow */
+            overflow: hidden; /* Скрываем выходящий за пределы текст */
+        }
+
+        .attribute-select {
+            flex: 1;
+            padding: 6px 8px;
+            margin-left: 2px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 13px;
+            min-width: 0;
+        }
+
+        .add-attribute-btn {
+            padding: 6px 12px;
+            margin-right: 2px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .add-attribute-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .add-attribute-btn:not(:disabled):hover {
+            background-color: #e0e0e0;
+        }
+
+        .add-attribute-wrapper {
+            display: flex;        /* Используем flex-контейнер */
+            flex-wrap: nowrap;    /* Запрещаем перенос на новую строку */
+            gap: 8px;            /* Отступ между элементами */
+            align-items: center;  /* Выравнивание по центру по вертикали */
+            width: 100%;         /* Занимает всю доступную ширину */
+            overflow: hidden;     /* Скрываем выходящее за пределы содержимое */
+        }
     </style>
 </head>
 <body>
@@ -335,8 +562,8 @@
             <button class="tool-label-btn tool-btn" id="bbox-tool">
                 <span>🟦</span> Bounding Box
             </button>
-            <button class="tool-label-btn tool-btn" id="brush-tool">
-                <span>🖌️</span> Кисть (сегментация)
+            <button class="tool-label-btn tool-btn" id="segment-tool">
+                <span>✏️</span> Сегментация
             </button>
         </div>
         
@@ -375,6 +602,6 @@
     </div>
 
     
-    <script src="/static_annotations/main.js"></script>
+    <script type="module" src="/static_annotations/main.js"></script>
 </body>
 </html>

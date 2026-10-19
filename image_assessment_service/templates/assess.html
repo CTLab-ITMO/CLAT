@@ -62,29 +62,23 @@
     {% include 'top-panel.html' %}
     <div class="main-content">
         <h1>Сервис разметки изображений</h1>
+        {% if features %}
         <div class="service-container">
-            <a href="/assess/tech" class="service-card">
-                <img src="/static_assess/img/tech.png" alt="Ориентация">
+            {% for f in features %}
+            <a href="/assess/{{ f.path }}" class="service-card">
+                <img src="/static_assess/img/{{ f.img }}" alt="{{ f.title }}">
                 <div>
-                    <h2>Качественная разметка</h2>
-                    <p>Аннотирование качественной составляющей изображения</p>
+                    <h2>{{ f.title }}</h2>
+                    <p>{{ f.description }}</p>
                 </div>
             </a>
-            <a href="/assess/aesth" class="service-card">
-                <img src="/static_assess/img/aesth.png" alt="Классификация">
-                <div>
-                    <h2>Эстетическая разметка</h2>
-                    <p>Аннотирование эстетической составляющей изображения</p>
-                </div>
-            </a>
-            <a href="/assess/image_filter" class="service-card">
-                <img src="/static_assess/img/image_filter.png" alt="Фильтрация изображений">
-                <div>
-                    <h2>Фильтрация изображений</h2>
-                    <p>Определение невалидных изображений</p>
-                </div>
-            </a>
+            {% endfor %}
         </div>
+        {% else %}
+        <div class="service-container">
+            <p>Нет доступных сервисов разметки.</p>
+        </div>
+        {% endif %}
     </div>
 
     <!-- Scripts -->

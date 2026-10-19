@@ -25,32 +25,44 @@ $(document).ready(function() {
         const password = $('#password').val();
 
         // Submit registration
-        $.ajax({
-            url: '/assess/users/register/',
-            type: 'post',
-            contentType: 'application/json',  // This is REQUIRED
-            data: JSON.stringify({           // Must stringify the data
-                email: email,
-                password: password
-            }),
-            success: function(response) {
-                console.log("Registration success:", response);
-                window.location.href = '/assess/users/auth/';  // Fixed path
-            },
-            error: function(xhr) {
-                console.error("Registration error:", xhr);
-                let errorMsg = xhr.responseJSON?.detail || 'Registration failed. Please try again.';
-                showAlert(errorMsg);
-            },
-            complete: function() {
-                $('#registerText').removeClass('d-none');
-                $('#registerSpinner').addClass('d-none');
-                $('button[type="submit"]').prop('disabled', false);
-            }
-        });
+        withCsrfToken(
+            (csrfToken) => $.ajax({
+                url: '/assess/users/register/',
+                type: 'post',
+                contentType: 'application/json',
+                headers: {
+                    'X-CSRF-Token': csrfToken
+                },
+                data: JSON.stringify({
+                    email: email,
+                    password: password
+                }),
+                success: function(response) {
+                    console.log("Registration success:", response);
+                    window.location.href = '/assess/users/confirm_email/';
+                },
+                error: function(response) {
+                    console.error("Registration error:", response);
+                    handleRegisterError(response)
+                },
+                complete: function() {
+                    $('#registerText').removeClass('d-none');
+                    $('#registerSpinner').addClass('d-none');
+                    $('button[type="submit"]').prop('disabled', false);
+                }
+            })
+        )
     });
-    function handleRegisterError(xhr) {
-        let errorMsg = xhr.responseJSON?.detail || 'Registration failed. Please try again.';
+
+    function handleRegisterError(response) {
+        let errorMsg = response.responseJSON?.detail || null;
+        if (!isString(errorMsg)) {
+            errorMsg = errorMsg[0]?.msg || 'Registration failed. Please try again.';
+        }
+        if (errorMsg === 'Email not confirmed') {
+            window.location.href = '/assess/users/confirm_email';
+            return
+        }
         showAlert(errorMsg);
     }
 

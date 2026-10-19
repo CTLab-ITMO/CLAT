@@ -8,7 +8,6 @@ from image_assessment_service.dependencies import get_container
 admin_service = get_container().admin_service
 annotation_service = get_container().annotation_service
 
-config = get_config().tasks
 templates = get_templates()
 router = APIRouter()
 

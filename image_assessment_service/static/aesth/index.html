@@ -7,6 +7,28 @@
     <!-- Bootstrap CSS -->
     <link href="../common/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        #noDataMessage {
+            margin: 40px auto;
+            max-width: 500px;
+            font-size: 1.2rem;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            text-align: center;
+        }
+
+        #serviceUnavailableMessage {
+            margin: 40px auto;
+            max-width: 500px;
+            font-size: 1.2rem;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-radius: 8px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+
         /* General styles */
         body {
             font-family: Arial, sans-serif;
@@ -15,21 +37,21 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             min-height: 100vh;
             background-color: #f8f9fa;
         }
 
         .container {
-            height: 100%;
             max-height: 1000px;
             padding: 20px;
             box-sizing: border-box;
         }
 
         .image-container {
-            height: 400px; /* Fixed height for the container */
-            width: auto; /* Width will adjust based on image aspect ratio */
+            width: 720px; /* Фиксированная рамка: размер не зависит от картинки, вёрстка не "скачет" */
+            height: 540px;
+            max-width: 100%; /* На узких экранах рамка сужается до ширины экрана */
             margin: 10px auto;
             display: flex;
             justify-content: center;
@@ -39,7 +61,7 @@
         }
 
         .image-container img {
-            max-height: 100%; /* Image can be smaller but not larger than container */
+            max-height: 100%; /* Картинка масштабируется под рамку */
             max-width: 100%; /* Prevent horizontal overflow */
             width: auto; /* Maintain aspect ratio */
             height: auto; /* Maintain aspect ratio */
@@ -61,6 +83,11 @@
             text-align: justify; /* Justify the list items */
             width: 100%; /* Ensure full width */
             padding-left: 15px; /* Small indent for better readability */
+        }
+
+        .instructions-box {
+            max-width: 800px; /* Ограничить ширину инструкций, чтобы не растягивались на весь экран */
+            margin: 0 auto;
         }
 
         .button-container {
@@ -127,7 +154,7 @@
         </div>
     </div>
 
-    <div class="container text-center">
+    <div class="container text-center assess-interface">
         <!-- Metrics Label -->
         <div class="row">
             <div class="mb-2"> <!-- Reduced margin-bottom -->
@@ -135,15 +162,19 @@
             </div>
         </div>
 
+        <div id="noDataMessage" class="d-none">
+            <h3>No data to classify</h3>
+            <p>There are no more images available for classification at this time.</p>
+        </div>
+
         <!-- Instructions -->
-        <div class="container">
+        <div class="container instructions-box">
             <div class="justified-text">
                 <p>Оцените качество изображения по шкале от 1 до 5, где 1 – изображение вам абсолютно не нравится, а 5 – полностью нравится. При оценке ориентируйтесь на следующие факторы:</p>
                 <ul class="numbered-list">
                     <li>Эстетическая сторона – насколько удачна композиция, насколько хороший выбор цветов и т.д.</li>
                     <li>Ваше общее впечатление от эстетической стороны изображения.</li>
                 </ul>
-                <p>Внимание! Если вы считаете, что изображение должно быть удалено из набора - нажмите "remove".</p>
             </div>
         </div>
 
@@ -157,20 +188,25 @@
         </div>
     </div>
 
+    <!-- Service Unavailable Message -->
+    <div id="serviceUnavailableMessage" class="d-none">
+        <h3>Сервис недоступен</h3>
+        <p>Данный сервис сейчас недоступен. Пожалуйста, попробуйте позже.</p>
+    </div>
+
     <!-- Buttons -->
-    <div class="button-container">
+    <div class="button-container assess-interface">
         <div class="d-flex flex-row justify-content-center align-items-center gap-2">
             <button id="btn_1" class="btn btn-outline-success btn-sm">one (1)</button>
             <button id="btn_2" class="btn btn-outline-danger btn-sm">two (2)</button>
             <button id="btn_3" class="btn btn-outline-primary btn-sm">three (3)</button>
             <button id="btn_4" class="btn btn-outline-warning btn-sm">four (4)</button>
             <button id="btn_5" class="btn btn-outline-info btn-sm">five (5)</button>
-            <button id="btn_0" class="btn btn-outline-dark btn-sm">remove (0)</button>
         </div>
     </div>
 
     <!-- Side Statistics Panel -->
-    <div class="stats-panel">
+    <div class="stats-panel assess-interface">
         <button id="statsToggle" class="stats-toggle-btn">
             <i class="bi bi-chevron-left"></i> Stats
         </button>
@@ -187,6 +223,7 @@
     <!-- Scripts -->
     <script src="../common/js/jquery-3.7.1.min.js"></script>
     <script src="../common/js/bootstrap.bundle.min.js"></script>
+    <script src="../common/js/common.js"></script>
     <script src="js/aesth.js"></script>
 </body>
 </html>

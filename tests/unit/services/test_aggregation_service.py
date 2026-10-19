@@ -14,12 +14,17 @@ expected_scores_data = [
     {
         "id": "2",
         "macro_accuracy": 1.0,
-        "micro_accuracy": 0.9,
+        "micro_accuracy": 1.0,
+    },
+    {
+        "id": "2",
+        "macro_accuracy": 1.0,
+        "micro_accuracy": 1.0,
     },
     {
         "id": "1",
         "macro_accuracy": 0.5,
-        "micro_accuracy": 0.45,
+        "micro_accuracy": 0.41,
     },
 ]
 
@@ -76,10 +81,16 @@ async def test_aggregate_annotations_success(
         user_id=user_id_2,
         image_name_to_data={"image1.jpg": annotation_data_2},
     )
+    annotation_id_3 = await create_test_annotation(
+        task_id=task_id,
+        user_id=user_id_2,
+        image_name_to_data={"image1.jpg": annotation_data_2},
+    )
 
     annotations = [
         await get_container().annotation_service.get_annotation(annotation_id_1),
         await get_container().annotation_service.get_annotation(annotation_id_2),
+        await get_container().annotation_service.get_annotation(annotation_id_3),
     ]
 
     annotation_id_res = await get_container().aggregation_service.aggregate_annotations(
@@ -94,7 +105,7 @@ async def test_aggregate_annotations_success(
         "id": 0,
         "label": "cat",
         "type": "bbox",
-        "coords": [11.0, 20.0, 31.0, 40.0],
+        "coords": [12, 20, 32, 40],
     }
 
     scores_file_path = await get_container().annotation_service.get_scores_path(

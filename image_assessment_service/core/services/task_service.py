@@ -1,13 +1,39 @@
-import os
+﻿import os
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import yaml
+from image_assessment_service.assessment.services.detection.service import DetectionService
 from image_assessment_service.autorization.models.core import Annotation, Task
 from image_assessment_service.config import get_config
+from image_assessment_service.core.services.consts import TaskFileTypes
 from image_assessment_service.core.storage import Storage
+
+
+@dataclass
+class Attribute:
+    key: str
+    type: str
+    options: List[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        data = {
+            "key": self.key,
+            "type": self.type,
+        }
+        if self.options:
+            data["options"] = self.options
+        return data
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> None:
+        return cls(
+            key=data["key"],
+            type=data["type"],
+            options=data.get("options") or [],
+        )
 
 
 @dataclass
@@ -15,55 +41,70 @@ class TaskSpec:
     title: int
     description: str
     num_images: int
-    bbox_labels: Optional[List[str]]
-    segmentation_labels: Optional[List[str]]
+    bbox_labels: List[str]
+    segmentation_labels: List[str]
+    image_labels: List[str]
+    attributes: List[Attribute]
     image_names: List[str]
-    instructions: Optional[str]
+    instructions: str
 
     def to_dict(self) -> Dict[str, Any]:
-        """Конвертирует объект Task в словарь"""
-        return {
+        """РљРѕРЅРІРµСЂС‚РёСЂСѓРµС‚ РѕР±СЉРµРєС‚ Task РІ СЃР»РѕРІР°СЂСЊ"""
+        data = {
             "title": self.title,
             "description": self.description,
             "instructions": self.instructions,
             "num_images": self.num_images,
-            "bbox_labels": self.bbox_labels,
-            "segmentation_labels": self.segmentation_labels,
-            "image_names": self.image_names,
         }
+        if self.bbox_labels:
+            data["bbox_labels"] = self.bbox_labels
+        if self.segmentation_labels:
+            data["segmentation_labels"] = self.segmentation_labels
+        if self.image_labels:
+            data["image_labels"] = self.image_labels
+        if self.attributes:
+            data["attributes"] = [a.to_dict() for a in self.attributes]
+        if self.image_names:
+            data["image_names"] = self.image_names
+        return data
 
     def save_to_yaml(self, output_file: str) -> None:
-        """Сохраняет задачу в YAML файл"""
+        """РЎРѕС…СЂР°РЅСЏРµС‚ Р·Р°РґР°С‡Сѓ РІ YAML С„Р°Р№Р»"""
         os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, "w", encoding="utf-8") as f:
             yaml.dump(self.to_dict(), f, allow_unicode=True, sort_keys=False)
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "TaskSpec":
-        """Создает объект TaskSpec из словаря"""
+        attributes = []
+        if data.get("attributes"):
+            attributes = [Attribute.from_dict(a) for a in data["attributes"]]
+        """РЎРѕР·РґР°РµС‚ РѕР±СЉРµРєС‚ TaskSpec РёР· СЃР»РѕРІР°СЂСЏ"""
         return cls(
             title=data["title"],
             description=data["description"],
             num_images=data["num_images"],
-            bbox_labels=data["bbox_labels"],
-            segmentation_labels=data["segmentation_labels"],
-            image_names=data.get("image_names"),
-            instructions=data.get("instructions"),
+            bbox_labels=data.get("bbox_labels") or [],
+            segmentation_labels=data.get("segmentation_labels") or [],
+            image_labels=data.get("image_labels") or [],
+            attributes=attributes,
+            image_names=data.get("image_names") or [],
+            instructions=data["instructions"],
         )
 
     @classmethod
     def from_yaml(cls, input_file: str) -> "TaskSpec":
-        """Загружает задачу из YAML файла"""
+        """Р—Р°РіСЂСѓР¶Р°РµС‚ Р·Р°РґР°С‡Сѓ РёР· YAML С„Р°Р№Р»Р°"""
         try:
             with open(input_file, "r", encoding="utf-8") as f:
                 data = yaml.safe_load(f)
                 return cls.from_dict(data)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Файл {input_file} не найден")
+            raise FileNotFoundError(f"Р¤Р°Р№Р» {input_file} РЅРµ РЅР°Р№РґРµРЅ")
         except yaml.YAMLError as e:
-            raise yaml.YAMLError(f"Ошибка при чтении YAML: {e}")
+            raise yaml.YAMLError(f"РћС€РёР±РєР° РїСЂРё С‡С‚РµРЅРёРё YAML: {e}")
         except KeyError as e:
-            raise ValueError(f"Отсутствует обязательное поле: {e}")
+            raise ValueError(f"РћС‚СЃСѓС‚СЃС‚РІСѓРµС‚ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕРµ РїРѕР»Рµ: {e}")
 
 
 @dataclass
@@ -84,6 +125,8 @@ class FullTask:
     num_images: int = None
     bbox_labels: Optional[List[str]] = None
     segmentation_labels: Optional[List[str]] = None
+    image_labels: Optional[List[str]] = None
+    attributes: Optional[List[Attribute]] = None
     image_names: List[str] = None
     instructions: Optional[str] = None
 
@@ -107,7 +150,7 @@ class FullTask:
 class TaskServiceImpl:
     def __init__(self, db_session):
         self.db_session = db_session
-        base_path = Path(get_config().tasks.base_path) / "tasks_data"
+        base_path = Path(DetectionService().base_path) / "tasks_data"
         self.storage = Storage(base_path)
 
     async def is_owner(self, task_id: int, user_id: int) -> bool:
@@ -135,7 +178,7 @@ class TaskServiceImpl:
             task = db.query(Task).filter(Task.task_id == task_id).first()
         if task is None:
             return None
-        path = await self.storage.get_file_path(Path(str(task_id)) / "task.yaml")
+        path = await self.storage.get_file_path(Path(str(task_id)) / TaskFileTypes.FILE_TYPE_SETTINGS / "task.yaml")
         try:
             task_spec = TaskSpec.from_yaml(path)
             return FullTask.get(task, task_spec)
@@ -150,7 +193,7 @@ class TaskServiceImpl:
         return full_tasks
 
     async def get_image_path(self, task_id: int, image_name: str):
-        return await self.storage.get_file_path(Path(str(task_id)) / image_name)
+        return await self.storage.get_file_path(Path(str(task_id)) / TaskFileTypes.FILE_TYPE_IMAGE / image_name)
 
     async def list_tasks(self) -> List[Task]:
         with self.db_session() as db:
@@ -158,7 +201,7 @@ class TaskServiceImpl:
             return tasks
 
     async def save(self, task_id: int, image_name: str, data: Dict) -> None:
-        self.storage.save_as_json(f"{Path(str(task_id)) / image_name}.json", data)
+        raise Exception("Unsupported")
 
     async def delete(self, task_id: str) -> Optional[Dict[str, Any]]:
         with self.db_session() as db:
@@ -167,3 +210,4 @@ class TaskServiceImpl:
             db.commit()
 
         await self.storage.delete_folder(str(task_id))
+

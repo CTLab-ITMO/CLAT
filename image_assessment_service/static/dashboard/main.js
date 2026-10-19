@@ -40,12 +40,9 @@ function renderTasks(tasks) {
                         <h2 class="task-title">${task.title}</h2>
                         <p class="task-description">${task.description}</p>
                         
-                        ${task.instructions ? `
-                            <div class="task-instructions">
-                                ${task.instructions}
-                            </div>
-                        ` : ''}
-                        
+                        <div class="task-instructions">
+                            ${task.instructions}
+                        </div>      
 
                     </div>
                     

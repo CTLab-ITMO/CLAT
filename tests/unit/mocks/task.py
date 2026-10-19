@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from fastapi import UploadFile
+from image_assessment_service.core.services.consts import TaskFileTypes
 from image_assessment_service.dependencies import get_container
 
 
@@ -25,6 +26,7 @@ def _task_metadata_1():
         "bbox_labels": ["cat", "notacat"],
         "segmentation_labels": [],
         "image_names": ["image1.jpg"],
+        "instructions": "Test instructions",
     }
 
 
@@ -50,7 +52,7 @@ async def create_test_task_1(_task_metadata_1, test_images_dir, mock_upload_file
     )
 
     upload_file = mock_upload_file(test_images_dir / "image1.jpg")
-    await get_container().data_uploader_service.upload_file(task_id, upload_file)
+    await get_container().data_uploader_service.upload_file(task_id, upload_file, TaskFileTypes.FILE_TYPE_IMAGE)
 
     await get_container().data_uploader_service.finish_upload(task_id)
 

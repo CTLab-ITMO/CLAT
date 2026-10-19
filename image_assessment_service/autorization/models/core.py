@@ -12,6 +12,8 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy.sql import func
+from datetime import datetime
+from enum import Enum
 
 Base = declarative_base()
 
@@ -25,9 +27,42 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     nickname = Column(String, unique=True)
 
+    email_confirmed_at = Column(DateTime, nullable=True, default=None)
+    email_confirm_token = Column(String(255), unique=True, index=False, nullable=True)
+
     items = relationship("Item", back_populates="owner")
     tokens = relationship("Token", back_populates="user")
     image_ratings = relationship("ImageRatings", back_populates="user")
+
+
+class CSRF(Base):
+    __tablename__ = "csrf_tokens"
+
+    class Purpose(Enum):
+        GENERAL = 'general'
+        REGISTER = 'register'
+        LOGIN = 'login'
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    token = Column(String(128), unique=True, index=True, nullable=False)
+    session_id = Column(String(64), nullable=False, index=True)
+    purpose = Column(String(64), nullable=False, default=Purpose.GENERAL.value)
+
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False, index=True)
+    used_at = Column(DateTime, nullable=True)
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String(255), unique=True, index=True, nullable=False)
+    email = Column(String(255), nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+    used_at = Column(DateTime, nullable=True)
 
 
 class Token(Base):

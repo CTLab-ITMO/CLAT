@@ -94,12 +94,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 </div>
                 
                 <div class="annotation-actions">
-                    <button class="view-markup-btn" onclick="event.stopPropagation(); window.location.href ='/annotations/${annotation.id}'">
+                    <button class="markup-action-btn" onclick="event.stopPropagation(); window.location.href ='/annotations/${annotation.id}'">
                         Посмотреть разметку
                     </button>
-                    ${annotation.has_scores ? `<button class="view-markup-btn" onclick="event.stopPropagation(); window.location.href ='/annotations/${annotation.id}/scores'">
+                    ${annotation.has_scores ? `<button class="markup-action-btn" onclick="event.stopPropagation(); window.location.href ='/annotations/${annotation.id}/scores'">
                         Оценки
                     </button>` : ""}
+                    <button class="markup-action-btn export-markup-btn" onclick="event.stopPropagation(); window.location.href ='/annotations/${annotation.id}/export'">
+                        Экспортировать
+                    </button>
                     <button class="delete-markup-btn" data-id="${annotation.id}">
                         Удалить
                     </button>
