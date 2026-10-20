@@ -34,22 +34,26 @@ $(document).ready(function() {
         $('button[type="submit"]').prop('disabled', true);
 
         // Perform login
-        $.ajax({
-            type: 'post',
-            url: '/assess/tokens/token/',
-            // contentType: 'application/x-www-form-urlencoded',
-            data: {
-                username: $('#email').val().trim(),
-                password: $('#password').val()
+        withCsrfToken(
+            (csrfToken) => $.ajax({
+                type: 'post',
+                url: '/assess/tokens/token/',
+                headers: {
+                    'X-CSRF-Token': csrfToken
+                },
+                data: {
+                    username: $('#email').val().trim(),
+                    password: $('#password').val()
+                },
+                success: function(response) {
+                    sessionStorage.setItem('access_token', response.access_token);
+                    sessionStorage.setItem('session_id', response.session_id);  // ← Critical!
+                    window.location.href = '/assess/main/';
             },
-            success: function(response) {
-                sessionStorage.setItem('access_token', response.access_token);
-                sessionStorage.setItem('session_id', response.session_id);  // ← Critical!
-                window.location.href = '/assess/main/';
-        },
-            error: handleLoginError,
-            complete: resetLoginForm
-        });
+                error: handleLoginError,
+                complete: resetLoginForm
+            })
+        );
     });
 
     // Auto-focus email field
@@ -166,10 +170,17 @@ $(document).ready(function() {
     });
 
     // ========== Helper Functions ========== //
-    function handleLoginError(xhr) {
-        let errorMsg = xhr.responseJSON?.detail || 'Login failed. Please try again.';
-        if (xhr.status === 401) {
+    function handleLoginError(response) {
+        let errorMsg = response.responseJSON?.detail || null;
+        if (!isString(errorMsg)) {
+            errorMsg = errorMsg[0]?.msg || 'Login failed. Please try again.';
+        }
+        if (response.status === 401) {
             errorMsg = 'Invalid email or password';
+        }
+        if (errorMsg === 'Email not confirmed') {
+            window.location.href = '/assess/users/confirm_email';
+            return
         }
         showAlert(errorMsg);
     }

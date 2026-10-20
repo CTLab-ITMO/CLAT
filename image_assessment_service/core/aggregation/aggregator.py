@@ -1,12 +1,8 @@
-from typing import List
+from typing import Dict, List
 
-import numpy as np
 from image_assessment_service.core.aggregation.dbscan import DBSCANClustering
-from image_assessment_service.core.aggregation.models import (
-    Annotation,
-    BBox,
-    Segmentation,
-)
+from image_assessment_service.core.aggregation.models import Annotation, Image
+from image_assessment_service.core.aggregation.utils import SimilarityCalculator
 
 
 class AnnotationAggregator:
@@ -18,58 +14,84 @@ class AnnotationAggregator:
         if not annotations:
             return []
 
-        # Cluster similar annotations
-        dbscan = DBSCANClustering(eps=self.threshold_iou, min_samples=self.min_overlap)
-        clusters = dbscan.cluster(annotations)
+        type_groups = self._group_by_type(annotations)
 
-        # Create consensus annotations
         aggregated = []
-        for cluster_id, cluster in enumerate(clusters):
-            if not cluster:
-                continue
-
-            labels = {}
-            for ann in cluster:
-                if ann.label not in labels:
-                    labels[ann.label] = 1
-                else:
-                    labels[ann.label] += 1
-
-            main_label = None
-            main_label_cnt = -1
-            for k, v in labels.items():
-                if main_label_cnt < v:
-                    main_label = k
-                    main_label_cnt = v
-
-            if main_label_cnt < self.min_overlap:
-                continue
-
-            if main_label_cnt < len(cluster):
-                cluster = [c for c in cluster if c.label == main_label]
-
-            # Create new consensus annotation
-            if isinstance(cluster[0], BBox):
-                new_ann = self._aggregate_bbox_cluster(cluster, cluster_id)
-            elif isinstance(cluster[0], Segmentation):
-                new_ann = self._aggregate_segmentation_cluster(cluster, cluster_id)
-            else:
-                continue
-
-            aggregated.append(new_ann)
+        for ann_type, group in type_groups.items():
+            if ann_type in ("bbox", "segment"):
+                aggregated.extend(self._aggregate_spatial(group))
+            elif ann_type == "image":
+                aggregated.extend(self._aggregate_images(group))
 
         return aggregated
 
-    def _aggregate_bbox_cluster(self, cluster: List[BBox], new_id: int) -> BBox:
-        avg_coords = np.mean([bbox.coords for bbox in cluster], axis=0).tolist()
-        return BBox(id=new_id, label=cluster[0].label, coords=avg_coords)
+    def _aggregate_spatial(self, annotations: List[Annotation]) -> List[Annotation]:
+        """Общий метод для агрегации bbox и сегментов."""
+        if not annotations:
+            return []
 
-    def _aggregate_segmentation_cluster(
-        self, cluster: List[Segmentation], new_id: int
-    ) -> Segmentation:
-        # TODO: Implement segmentation aggregation
-        return Segmentation(
-            id=new_id,
-            label=cluster[0].label,
-            coords=cluster[0].coords,
+        dbscan = DBSCANClustering(eps=self.threshold_iou, min_samples=self.min_overlap)
+        clusters = dbscan.cluster(annotations)
+
+        aggregated = []
+        for cluster_id, cluster in enumerate(clusters):
+            best_ann = self._select_best_annotation(cluster)
+            if best_ann is None:
+                continue
+
+            best_ann.id = cluster_id
+            aggregated.append(best_ann)
+
+        return aggregated
+
+    def _aggregate_images(self, images: List[Annotation]) -> List[Annotation]:
+        if not images:
+            return []
+
+        label_counts = _count_labels(images)
+
+        main_label = max(label_counts, key=label_counts.get, default=None)
+        return [Image(id=0, label=main_label)] if main_label else []
+
+    def _group_by_type(self, annotations: List[Annotation]) -> Dict[str, List[Annotation]]:
+        type_groups = {}
+        for ann in annotations:
+            ann_type = ann.type
+            if ann_type not in type_groups:
+                type_groups[ann_type] = []
+            type_groups[ann_type].append(ann)
+
+        return type_groups
+
+    def _select_best_annotation(self, cluster: List[Annotation]):
+        if not cluster:
+            return None
+
+        main_label = self._get_main_label(cluster)
+        if not main_label:
+            return None
+
+        filtered_cluster = [c for c in cluster if c.label == main_label]
+
+        return max(
+            filtered_cluster,
+            key=lambda x: sum(
+                SimilarityCalculator.calculate(x, y)
+                for y in filtered_cluster
+                if y != x
+            ),
         )
+
+    def _get_main_label(self, cluster: List[Annotation]) -> str | None:
+        label_counts = _count_labels(cluster)
+
+        main_label = max(label_counts, key=label_counts.get, default=None)
+        return main_label if label_counts[main_label] >= self.min_overlap else None
+
+
+def _count_labels(annotations: List[Annotation]) -> Dict[str, int]:
+    label_counts: Dict[str, int] = {}
+    for ann in annotations:
+        label_counts[ann.label] = label_counts.get(ann.label, 0) + 1
+
+    return label_counts

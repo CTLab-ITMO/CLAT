@@ -11,7 +11,6 @@ from pydantic import BaseModel
 
 admin_service = get_container().admin_service
 
-config = get_config().tasks
 templates = get_templates()
 router = APIRouter()
 

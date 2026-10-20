@@ -1,4 +1,4 @@
-from image_assessment_service.autorization.models.core import (
+﻿from image_assessment_service.autorization.models.core import (
     Annotation,
     ImageRatings,
     Images,
@@ -15,8 +15,9 @@ args = parse_args()
 load_config(args.config_path)
 config = get_config()
 
-from image_assessment_service.core.services.annotation_service import annotationService
-from image_assessment_service.services import SamplesService
+from image_assessment_service.assessment.services.classification.features.tech_assessment import TechAssessmentFeature
+from image_assessment_service.autorization.models.database import db_session
+from image_assessment_service.core.services.annotation_service import AnnotationServiceImpl
 
 ID_START_MAGIC_CONSTANT = 12321312
 
@@ -50,7 +51,8 @@ def init_test_data():
         db.commit()  # Final commit for users
 
         for u in users:
-            asyncio.run(annotationService.create_annotation(4, u.id))
+            annotation_service = AnnotationServiceImpl(db_session)
+            asyncio.run(annotation_service.create_annotation(4, u.id))
 
         # Now create tokens with valid user IDs
         tokens = [
@@ -65,11 +67,12 @@ def init_test_data():
 
         images = []
         # Create test images
-        service = SamplesService(code="tech", db=db)
-        print(f"Created {len(users)} users, {len(tokens)} tokens, {service.size()} images, {len(users)} annotations")
+        feature = TechAssessmentFeature()
+        feature.init(db)
+        print(f"Created {len(users)} users, {len(tokens)} tokens, {feature.size()} images, {len(users)} annotations")
 
-        rand_fid, _ = service.rand_fid(code="test", token=tokens[0].access_token, db=db)
-        service.mark(fid=rand_fid, type="4", code="tech", token=tokens[0].access_token, db=db)
+        rand_fid, _ = feature.rand_fid(token=tokens[0].access_token, db=db)
+        feature.mark(fid=rand_fid, type="4", token=tokens[0].access_token, db=db)
 
     finally:
         db.close()

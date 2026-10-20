@@ -15,6 +15,12 @@ class DBSCANClustering:
         if len(annotations) == 0:
             return []
 
+        dist_matrix = self._build_distance_matrix(annotations)
+        labels = self._fit_clusters(dist_matrix)
+
+        return self._build_result(annotations, labels)
+
+    def _build_distance_matrix(self, annotations: List[Annotation]) -> np.ndarray:
         n = len(annotations)
         dist_matrix = np.ones((n, n))
 
@@ -24,13 +30,18 @@ class DBSCANClustering:
                 dist_matrix[i, j] = 1 - sim
                 dist_matrix[j, i] = 1 - sim
 
+        return dist_matrix
+
+    def _fit_clusters(self, dist_matrix: np.ndarray):
         dbscan = DBSCAN(
             eps=1 - self.eps,
             min_samples=max(1, self.min_samples - 1),
             metric="precomputed",
         ).fit(dist_matrix)
 
-        labels = dbscan.labels_
+        return dbscan.labels_
+
+    def _build_result(self, annotations: List[Annotation], labels) -> List[List[Annotation]]:
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
 
         res = [[] for _ in range(n_clusters_)]
@@ -38,7 +49,7 @@ class DBSCANClustering:
             if c == -1:
                 if self.min_samples == 1:
                     res.append([ann])
-                # outlier
             else:
                 res[c].append(ann)
+
         return res

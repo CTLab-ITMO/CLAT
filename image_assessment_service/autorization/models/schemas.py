@@ -34,6 +34,11 @@ class UserOut(UserBase):
 
 ResetRequest = UserBase
 
+class EmailConfirm(UserBase):
+    token: str
+
+ResendConfirmEmailToken = UserBase
+
 class ResetConfirm(BaseModel):
     token: str
     new_password: str

@@ -1,0 +1,55 @@
+postgres:
+  host: localhost
+  port: 5432
+  dbname: mydatabase
+  user: myuser
+
+application:
+  name: image-assessment-service
+  host: 0.0.0.0
+  port: 5000
+
+services:
+  detection:
+    enabled: false
+    path: data/tasks_data
+
+  segmentation:
+    enabled: false
+    path: data/tasks_data
+
+  classification:
+    enabled: true
+    features:
+      tech:
+        enabled: true
+        assess_type: continue
+        vote_number: 7
+        path: data/images/validation_1000
+
+      aesth:
+        enabled: true
+        assess_type: continue
+        vote_number: 7
+        path: data/images/validation_1000
+
+      filter:
+        enabled: false
+        assess_type: continue
+        vote_number: 1
+        path: data/images/validation_1000
+
+      classify:
+        enabled: false
+        assess_type: continue
+        vote_number: 5
+        path: data/images/validation_1000
+        example_dir: data/example_data
+
+test:
+  user_count: 50
+  host_url: "http://localhost:8000"
+  spawn_rate: 50
+  test_duration: "5m"
+  test_user_prefix: "loadtest_user"
+  test_password: "testpass123"

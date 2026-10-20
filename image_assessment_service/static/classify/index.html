@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аннотирование категорий</title>
+    <!-- Bootstrap CSS -->
+    <link href="../common/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        /* Add to your existing styles */
+        #noDataMessage {
+            margin: 40px auto;
+            max-width: 500px;
+            font-size: 1.2rem;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        #serviceUnavailableMessage {
+            margin: 40px auto;
+            max-width: 500px;
+            font-size: 1.2rem;
+            padding: 20px;
+            background-color: #fff3cd;
+            border-radius: 8px;
+            border: 1px solid #ffeeba;
+            text-align: center;
+        }
+
+        /* General styles */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            max-height: 1000px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .image-container {
+            width: fit-content; /* Ширина по содержимому, чтобы не было пустой полосы */
+            max-width: 100%; /* Ограничение по ширине родителя */
+            margin: 10px auto;
+            display: block;
+            background-color: #fff; /* Optional: gives a consistent background */
+            border: 1px solid #ddd; /* Optional: visual boundary */
+        }
+
+        .image-container img {
+            display: block; /* Не flex-элемент: работает пропорциональное масштабирование по max-ограничениям */
+            max-height: 600px; /* Кап высоты: большие изображения не раздувают страницу */
+            max-width: 100%; /* Prevent horizontal overflow */
+            width: auto; /* Maintain aspect ratio */
+            height: auto; /* Maintain aspect ratio */
+            object-fit: contain;
+            image-rendering: crisp-edges;
+        }
+
+        #metrics_label {
+            margin-bottom: 5px; /* Reduced spacing below the label */
+            font-size: 16px; /* Default font size */
+        }
+
+        .justified-text {
+            text-align: justify; /* Justify text alignment */
+            width: 100%; /* Ensure it spans the full width */
+        }
+
+        .numbered-list {
+            text-align: justify; /* Justify the list items */
+            width: 100%; /* Ensure full width */
+            padding-left: 15px; /* Small indent for better readability */
+        }
+
+        .instructions-box {
+            max-width: 800px; /* Ограничить ширину инструкций, чтобы не растягивались на весь экран */
+            margin: 0 auto;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            align-items: center; /* Align items properly */
+            width: 100%; /* Ensure it spans the full width */
+            margin-top: 20px; /* Space from the image */
+        }
+
+        .button-container .d-flex {
+            flex-direction: row; /* Ensure horizontal alignment */
+            gap: 10px; /* Space between buttons */
+        }
+
+        .btn {
+            width: 100px; /* Default button width */
+            height: 40px; /* Default button height */
+            padding: 5px; /* Default padding */
+            font-size: 14px; /* Default font size */
+            margin-bottom: 10px; /* Spacing between buttons */
+        }
+
+        .images-row {
+            display: flex;
+            justify-content: space-between; /* left-group слева, right-single справа внутри max-width */
+            align-items: flex-start;         /* выровнять по верхнему краю */
+            gap: 40px;                       /* пространство между левым блоком и правым изображением */
+            max-width: 1100px;               /* не прижимать к краям — ограничим ширину общей области */
+            width: 100%;
+            margin: 0 auto 20px;             /* центрируем область и даём отступ снизу */
+            box-sizing: border-box;
+            padding: 0 20px;                 /* небольшой внутренний отступ от краёв экрана */
+        }
+
+        /* Left group: two images side-by-side */
+        .left-group {
+            display: flex;
+            gap: 24px;      /* расстояние между двумя левыми изображениями */
+            align-items: flex-start;
+        }
+
+        /* Right single stays compact */
+        .right-single {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 220px; /* можно подправить под желаемый размер */
+        }
+
+        /* Убедимся, что контейнер с картинкой и подписью — всегда строгая колонка */
+        .col-auto.text-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* важный момент — содержимое прижато к верху колонки */
+            box-sizing: border-box;
+        }
+
+        /* Убираем стандартные отступы у <p> в подписи — часто причина "поплывшего" верхнего выравнивания */
+        .label-container p {
+            margin: 0;
+            padding: 0;
+            line-height: 1.1;
+        }
+
+        /* Немного отступа между подписью и картинкой (регулируй при необходимости) */
+        .label-container {
+            margin-bottom: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        /* На всякий случай: чёткое верхнее выравнивание всей строки изображений */
+        .images-row {
+            align-items: flex-start; /* уже было, но дублировать безопасно */
+        }
+
+        /* Если картинка всё ещё смещается — принудительно выровнять image-container по верху колонки */
+        .image-container {
+            align-self: flex-start;
+        }
+
+        /* Media Queries for smaller screens (phones) */
+        @media (max-width: 768px) {
+            .image-container {
+                max-height: 200px; /* Smaller maximum width for phones */
+            }
+
+            #metrics_label {
+                font-size: 14px; /* Smaller font size for phones */
+            }
+
+            .justified-text, .numbered-list {
+                font-size: 12px; /* Smaller font size for phones */
+            }
+
+            .btn {
+                width: 60px; /* Smaller button width for phones */
+                height: 20px; /* Smaller button height for phones */
+                font-size: 8px; /* Smaller font size for phones */
+            }
+        }
+
+        @media (max-width: 900px) {
+            .images-row {
+                flex-direction: column;
+                align-items: center;
+                padding: 0 12px;
+            }
+            .left-group {
+                gap: 16px;
+                margin-bottom: 16px;
+            }
+            .right-single {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container-fluid px-0">
+        <div class="row g-0 justify-content-between align-items-center mx-0">
+            <div class="col-auto ps-3">
+                <button id="home-btn" class="btn p-0 bg-transparent text-black text-decoration-underline">
+                    <i class="bi bi-house-door me-2"></i> На главную
+                </button>
+            </div>
+            <div class="col-auto pe-3">
+                <button id="logout-btn" class="btn p-0 bg-transparent text-black text-decoration-underline">
+                    <i class="bi bi-box-arrow-right me-2"></i> Выйти
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="container text-center assess-interface">
+
+        <div class="row">
+            <div class="mb-2">
+                <p id="metrics_label">Осталось файлов: 0. Принято ответов: 0</p>
+            </div>
+        </div>
+
+        <!-- Instructions -->
+        <div class="container instructions-box">
+            <div class="justified-text">
+                <p>Вам нужно классифицировать изображение на класс 1 или на класс 2. Эти классы похожи между собой</p>
+            </div>
+        </div>
+
+        <!-- No Data Message (initially hidden) -->
+        <div id="noDataMessage" class="d-none">
+            <h3>No data to classify</h3>
+            <p>There are no more images available for classification at this time.</p>
+        </div>
+
+        <!-- IMAGES ROW: two images on the LEFT, one image on the RIGHT (all on same level) -->
+        <div class="images-row">
+            <!-- LEFT GROUP: two images side-by-side -->
+            <div class="left-group">
+                <div class="col-auto text-center">
+                    <div class="label-container">
+                        <p>Класс 1</p>
+                    </div>
+                    <div class="image-container">
+                        <img id="example_img1" src="../common/img/document.e9ed1d59.png" class="img-fluid">
+                    </div>
+                </div>
+
+                <div class="col-auto text-center">
+                    <div class="label-container">
+                        <p>Класс 2</p>
+                    </div>
+                    <div class="image-container">
+                        <img id="example_img2" src="../common/img/document.e9ed1d59.png" class="img-fluid">
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT SINGLE: third image, on same level -->
+            <div class="right-single text-center">
+                <div class="label-container">
+                    <p>Изображение, которое требуется распознать</p>
+                </div>
+                <div class="image-container">
+                    <img id="sample_img" src="../common/img/document.e9ed1d59.png" class="img-fluid">
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Service Unavailable Message -->
+    <div id="serviceUnavailableMessage" class="d-none">
+        <h3>Сервис недоступен</h3>
+        <p>Данный сервис сейчас недоступен. Пожалуйста, попробуйте позже.</p>
+    </div>
+
+    <!-- Buttons -->
+    <div class="button-container assess-interface">
+        <div class="d-flex flex-row justify-content-center align-items-center gap-2">
+            <button id="btn_1" class="btn btn-outline-success btn-sm">one (1)</button>
+            <button id="btn_2" class="btn btn-outline-danger btn-sm">two (2)</button>
+        </div>
+    </div>
+
+    <script src="../common/js/jquery-3.7.1.min.js"></script>
+    <script src="../common/js/bootstrap.bundle.min.js"></script>
+    <script src="../common/js/common.js"></script>
+    <script src="js/classify.js"></script>
+</body>
+</html>

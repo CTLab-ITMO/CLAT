@@ -1,5 +1,3 @@
-// const taskId
-
 document.addEventListener('DOMContentLoaded', async function() {
     if (document.startup !== undefined) {
         await document.startup();
@@ -15,16 +13,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
         const taskData = await response.json();
         
-        // Заполняем страницу данными
+        // Заполняем основные данные
         document.getElementById('task-title').textContent = taskData.title;
         document.getElementById('task-description').textContent = taskData.description;
         document.getElementById('num-images').textContent = taskData.num_images;
-        
-        if (taskData.instructions) {
-            document.getElementById('task-instructions').textContent = taskData.instructions;
-        } else {
-            document.querySelector('#task-instructions').parentElement.style.display = 'none';
-        }
+        document.getElementById('task-instructions').textContent = taskData.instructions;
         
         // Заполняем метки
         if (taskData.bbox_labels && taskData.bbox_labels.length > 0) {
@@ -47,6 +40,82 @@ document.addEventListener('DOMContentLoaded', async function() {
             });
         } else {
             document.querySelector('#segmentation-labels').parentElement.style.display = 'none';
+        }
+        
+        // Заполняем метки изображений
+        if (taskData.image_labels && taskData.image_labels.length > 0) {
+            taskData.image_labels.forEach(label => {
+                const li = document.createElement('li');
+                li.className = 'label-item';
+                li.textContent = label;
+                document.getElementById('image-labels').appendChild(li);
+            });
+        } else {
+            document.querySelector('#image-labels').parentElement.style.display = 'none';
+        }
+        
+        // Заполняем атрибуты
+        const attributesContainer = document.getElementById('attributes-list');
+        
+        if (taskData.attributes && Object.keys(taskData.attributes).length > 0) {
+            Object.entries(taskData.attributes).forEach(([_, config]) => {
+                const attributeCard = document.createElement('div');
+                attributeCard.className = 'attribute-card';
+                
+                const nameElement = document.createElement('div');
+                nameElement.className = 'attribute-name';
+                nameElement.textContent = config.key;
+                attributeCard.appendChild(nameElement);
+                
+                const typeElement = document.createElement('div');
+                typeElement.className = 'attribute-type';
+                
+                // Определяем класс для типа
+                let typeClass = '';
+                switch(config.type) {
+                    case 'number':
+                        typeClass = 'type-number';
+                        break;
+                    case 'flag':
+                        typeClass = 'type-flag';
+                        break;
+                    case 'categorical':
+                        typeClass = 'type-categorical';
+                        break;
+                    case 'text':
+                        typeClass = 'type-text';
+                        break;
+                    default:
+                        typeClass = '';
+                }
+                
+                typeElement.innerHTML = `Тип: <span class="type-badge ${typeClass}">${config.type}</span>`;
+                attributeCard.appendChild(typeElement);
+                
+                // Добавляем варианты для категориальных атрибутов
+                if (config.type === 'categorical' && config.options && config.options.length > 0) {
+                    const optionsElement = document.createElement('div');
+                    optionsElement.className = 'attribute-options';
+                    
+                    const optionsTitle = document.createElement('span');
+                    optionsTitle.textContent = 'Варианты:';
+                    optionsElement.appendChild(optionsTitle);
+                    
+                    const optionsList = document.createElement('ul');
+                    config.options.forEach(option => {
+                        const optionItem = document.createElement('li');
+                        optionItem.textContent = option;
+                        optionsList.appendChild(optionItem);
+                    });
+                    
+                    optionsElement.appendChild(optionsList);
+                    attributeCard.appendChild(optionsElement);
+                }
+                
+                attributesContainer.appendChild(attributeCard);
+            });
+        } else {
+            document.querySelector('#attributes-list').parentElement.style.display = 'none';
         }
         
         // Заполняем ID изображений

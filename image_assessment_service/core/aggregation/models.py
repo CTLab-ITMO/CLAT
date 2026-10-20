@@ -28,5 +28,15 @@ class BBox(Annotation):
 
 
 @dataclass(kw_only=True)
-class Segmentation(Annotation):
-    type: str = "segmentation"
+class Image(Annotation):
+    type: str = "image"
+
+
+@dataclass(kw_only=True)
+class Segment(Annotation):
+    type: str = "segment"
+    points: np.ndarray  # [x1, y1, x2, y2, ...]
+
+    def to_dict(self):
+        base_dict = super().to_dict()
+        return {**base_dict, "points": self.points}

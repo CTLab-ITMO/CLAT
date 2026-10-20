@@ -10,11 +10,12 @@ from locust import HttpUser, between, events, task
 from sqlalchemy import text
 
 load_dotenv()
-config_path = Path("local.config.yaml")
+config_path = Path("resources/configs/local.yaml")
 load_config(config_path)
 config = get_config()
 
-from image_assessment_service.core.services.annotation_service import annotationService
+from image_assessment_service.autorization.models.database import db_session
+from image_assessment_service.core.services.annotation_service import AnnotationServiceImpl
 
 ID_START_MAGIC_CONSTANT = 12321312
 
@@ -28,7 +29,8 @@ class ImageAssessmentUser(HttpUser):
         self.user_id = ID_START_MAGIC_CONSTANT + random.randint(0, config.test.user_count - 1)
         self.token = f"loadtest_token_{self.user_id}"
         self.current_fid = None
-        self.annotation_id = asyncio.run(annotationService.get_annotations(self.user_id))[0].annotation_id
+        annotation_service = AnnotationServiceImpl(db_session)
+        self.annotation_id = asyncio.run(annotation_service.get_annotations(self.user_id))[0].annotation_id
 
 
     # @task(3)

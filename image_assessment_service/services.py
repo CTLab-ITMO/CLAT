@@ -1,14 +1,5 @@
 import os
-import pathlib
-
-import random
 import uuid
-
-import psycopg2
-from psycopg2.extras import DictCursor
-from psycopg2 import sql
-
-from omegaconf import OmegaConf
 
 from image_assessment_service.storages import Storages
 from image_assessment_service.autorization.controllers.image_ratings import init_images, mark_image, has_image_ratings, \
@@ -21,6 +12,8 @@ from fastapi import Depends
 from pathlib import Path
 
 from sqlalchemy.orm import Session
+
+from tqdm import tqdm
 
 
 config = get_config()
@@ -45,48 +38,26 @@ table_name = config.postgres.table_name
 
 class SamplesService:
     def __init__(self, code, db: Session):
-        """Initialize the service and load images into memory."""
         self.__samples = {}
         self.__all = 0
         self.__answers = 0
         self.__inited = False
-        self.__out_path = config.storages.get(code).out_path
-        os.makedirs(self.__out_path, exist_ok=True)
+        self.__init_images_dict: None | dict = None
 
         if self.__inited:
             return
 
-        init_images_dict = {
-            "fid": [],
-            "code": [],
-            "folder": [],
-            "name": []
-        }
-        # Load images into memory and register them
-        # root = Storages().get(code).root
-        # for cat in os.listdir(root):
-        # for f in Storages().get(code).files(exts=["*.jpg", "*.jpeg", "*.png"], folder=cat):
-        for f in Storages().get(code).walkdir(exts=[".jpg", ".jpeg", ".png"]):
-            u = str(uuid.uuid4())
-            init_images_dict["fid"].append(u)
-            init_images_dict["code"].append(f[0])
-            init_images_dict["folder"].append(f[1])
-            init_images_dict["name"].append(f[2])
-
-        if config.storages.get(code).continue_assess:
-            rows, init_images_dict = get_images_by_dict(images_dict=init_images_dict, db=db)
+        if config.storages.get(code).assess_type == "continue":
+            self.create_init_images_dict(code)
+            rows, init_images_dict = get_images_by_dict(images_dict=self.__init_images_dict, db=db, code=code)
             for row in rows:
-                # Sum the answers
                 self.__answers += row.grade_1 + row.grade_2 + row.grade_3 + row.grade_4 + row.grade_5 + row.inappropriate
 
                 if not row.annotated:
-                    # Store the (code, folder, name) tuple in the dictionary
                     self.__samples[str(row.fid)] = (row.code, row.folder, row.name)
 
             if len(init_images_dict["code"]) > 0:
-                # If there are some new images the will be added to db
-                init_images(db=db, init_images_dict=init_images_dict)
-                # Load image info in memory
+                init_images(db=db, init_images_dict=init_images_dict, code=code)
                 self.add_samples(init_images_dict)
 
             self.__inited = True
@@ -94,10 +65,34 @@ class SamplesService:
 
             return
 
-        init_images(db=db, init_images_dict=init_images_dict)
-        self.add_samples(init_images_dict)
-        self.__all = len(self.__samples)
-        self.__inited = True
+        elif config.storages.get(code).assess_type == "new":
+
+            if not self.__init_images_dict:
+                self.create_init_images_dict(code)
+
+            init_images(db=db, init_images_dict=self.__init_images_dict, code=code)
+            self.add_samples(self.__init_images_dict)
+            self.__all = len(self.__samples)
+            self.__inited = True
+
+        else:
+            self.__inited = True
+            return
+
+    def create_init_images_dict(self, code):
+        self.__init_images_dict = {
+            "fid": [],
+            "code": [],
+            "folder": [],
+            "name": []
+        }
+
+        for f in tqdm(Storages().get(code).walkdir(exts=[".jpg", ".jpeg", ".png"]), desc=f"initialize image dict for code {code}"):
+            u = str(uuid.uuid4())
+            self.__init_images_dict["fid"].append(u)
+            self.__init_images_dict["code"].append(f[0])
+            self.__init_images_dict["folder"].append(f[1])
+            self.__init_images_dict["name"].append(f[2])
 
     def add_samples(self, images_dict: dict):
         for i in range(len(images_dict["code"])):
@@ -108,8 +103,6 @@ class SamplesService:
         """Get a random image id."""
         if not self.__inited:
             self.init(code)
-        # if len(self.__samples) <= 0:
-        #     return None, None
         fid, user_answers = unique_fid_per_user(token=token, db=db, all_fids=list(self.__samples.keys()), code=code)
         return fid, user_answers
 
@@ -131,9 +124,8 @@ class SamplesService:
         self.__answers += 1
 
         if score:
-            out_dir = Path(self.__out_path) / Path(str(score)) / code
-            os.makedirs(out_dir, exist_ok=True)
-            # Storages().get(f[0]).copy_to(f[1], f[2], out_dir, f"{code}_{f[2]}")
+            # out_dir = Path(self.__out_path) / Path(str(score)) / code
+            # os.makedirs(out_dir, exist_ok=True)
             self.__samples.pop(fid)
 
     def size(self) -> int:
