@@ -1,9 +1,3 @@
-postgres:
-  host: postgres
-  port: 5432
-  dbname: mydatabase
-  user: myuser
-
 application:
   name: image-assessment-service
   host: 0.0.0.0

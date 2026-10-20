@@ -106,10 +106,20 @@ def load_config(config_path: pathlib.Path) -> None:
     with open(config_path, encoding="utf-8") as f:
         config_dict = yaml.safe_load(f) or {}
 
-    postgres_password = os.getenv("POSTGRES_PASSWORD")
-    if postgres_password:
-        config_dict.setdefault("postgres", {})["password"] = postgres_password
-    elif not config_dict.get("postgres", {}).get("password"):
+    postgres_env = {
+        "host": "POSTGRES_HOST",
+        "port": "POSTGRES_PORT",
+        "dbname": "POSTGRES_DATABASE",
+        "user": "POSTGRES_USER",
+        "password": "POSTGRES_PASSWORD",
+    }
+    postgres_conf = config_dict.setdefault("postgres", {})
+    for key, env_name in postgres_env.items():
+        value = os.getenv(env_name)
+        if value is not None:
+            postgres_conf[key] = value
+
+    if not postgres_conf.get("password"):
         raise RuntimeError("Postgres password must be provided")
 
     _config_instance = Config.model_validate(config_dict)
