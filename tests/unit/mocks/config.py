@@ -20,15 +20,12 @@ def mock_config(monkeypatch, tmp_path):
         },
         "services": {
             "detection": {
-                "enabled": True,
                 "path": str(tmp_path / "data/tasks_data"),
             },
             "segmentation": {
-                "enabled": True,
                 "path": str(tmp_path / "data/tasks_data"),
             },
             "classification": {
-                "enabled": True,
                 "features": {
                     "tech": {
                         "enabled": True,

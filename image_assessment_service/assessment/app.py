@@ -72,11 +72,7 @@ class AssessmentApp:
         return services
 
     def _enabled_service_codes(self, config) -> List[str]:
-        codes = []
-        if config.services.detection.enabled:
-            codes.append("detection")
-        if config.services.segmentation.enabled:
-            codes.append("segmentation")
+        codes = ["detection", "segmentation"]
         codes.extend(
             code for code, cfg in config.services.classification.features.items() if cfg.enabled
         )
