@@ -1,4 +1,5 @@
 import structlog
+from dotenv import load_dotenv
 
 from image_assessment_service.config import load_config
 
@@ -8,6 +9,7 @@ def cli_runner():
     logger = structlog.get_logger()
     logger.info(f'Use config: {args.config_path}')
 
+    load_dotenv()
     load_config(args.config_path)
 
     from image_assessment_service.assessment.app import AssessmentApp

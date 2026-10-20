@@ -44,11 +44,11 @@ class PostgresConfig(BaseModel):
 
 
 class ServiceConfig(BaseModel):
-    enabled: bool = Field(True, description="Service enabled flag")
     path: str = Field(..., description="Full path to the service data")
 
 
 class ServiceFeatureConfig(ServiceConfig):
+    enabled: bool = Field(True, description="Service enabled flag")
     code: Optional[str] = Field(None, description="Feature code, set automatically from config key")
     assess_type: Optional[str] = Field(None, description="Assessment type [None | continue | new]")
     vote_number: int = Field(0, description="The number of votes are needed to finish assessing for image")
@@ -56,7 +56,6 @@ class ServiceFeatureConfig(ServiceConfig):
 
 
 class ClassificationServiceConfig(BaseModel):
-    enabled: bool = Field(True, description="Service enabled flag")
     features: Dict[str, ServiceFeatureConfig] = Field(default_factory=dict)
 
     @field_validator('features', mode='before')

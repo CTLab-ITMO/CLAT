@@ -5,15 +5,12 @@ application:
 
 services:
   detection:
-    enabled: true
     path: /app/data/tasks_data
 
   segmentation:
-    enabled: true
     path: /app/data/tasks_data
 
   classification:
-    enabled: true
     features:
       tech:
         enabled: true
